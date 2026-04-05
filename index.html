@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Tap Game</title>
+  <style>
+    body { text-align:center; font-family:sans-serif; background:#111; color:#fff;}
+    button { font-size:30px; padding:20px; border-radius:10px; }
+  </style>
+</head>
+<body>
+
+<h1>💰 Coins: <span id="coins">0</span></h1>
+
+<button onclick="tap()">TAP 🚀</button>
+
+<script>
+let coins = 0;
+
+function tap() {
+  coins++;
+  document.getElementById("coins").innerText = coins;
+}
+</script>
+
+</body>
+</html>
