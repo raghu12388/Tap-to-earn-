@@ -1,9 +1,10 @@
  <!DOCTYPE html>
 <html>
 <head>
-<title>Tap2Earn PRO</title>
+<title>Tap2Earn SECURE</title>
 
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
 <style>
 body{
@@ -11,87 +12,69 @@ body{
   text-align:center;
   font-family:sans-serif;
   color:white;
-  overflow:hidden;
-  background:linear-gradient(-45deg,#0f0f0f,#1a0033,#000,#001a33);
-  background-size:400% 400%;
-  animation:bg 10s infinite;
+  background:#000;
 }
 
-@keyframes bg{
-  0%{background-position:0% 50%;}
-  50%{background-position:100% 50%;}
-  100%{background-position:0% 50%;}
+.btn{
+  margin:6px;
+  padding:10px;
+  background:#222;
+  border:none;
+  color:white;
 }
 
 .tap{
   width:150px;height:150px;
   border-radius:50%;
+  background:#ff00cc;
   font-size:25px;
-  background:linear-gradient(45deg,#ff00cc,#3333ff);
-  animation:pulse 1.5s infinite;
-  border:none;color:white;
-}
-
-@keyframes pulse{
-  0%{box-shadow:0 0 10px #ff00cc;}
-  50%{box-shadow:0 0 40px #ff00cc;}
-  100%{box-shadow:0 0 10px #ff00cc;}
-}
-
-.btn{
-  margin:5px;
-  padding:10px;
-  background:#222;
   border:none;
-  color:white;
-  border-radius:8px;
 }
 
-#reward{
-  position:fixed;
-  top:40%;
-  left:50%;
-  transform:translate(-50%,-50%);
-  font-size:28px;
-  color:gold;
-  opacity:0;
+#loginBox{
+  margin-top:50px;
 }
 
-.show{
-  animation:pop 1s forwards;
-}
-
-@keyframes pop{
-  0%{opacity:0; transform:translate(-50%,0);}
-  50%{opacity:1; transform:translate(-50%,-30px);}
-  100%{opacity:0; transform:translate(-50%,-80px);}
+#game{
+  display:none;
 }
 </style>
 </head>
 
 <body>
 
-<div id="reward"></div>
+<!-- LOGIN -->
+<div id="loginBox">
+  <h2>🔐 Login</h2>
+  <input id="email" placeholder="Email"><br><br>
+  <input id="pass" type="password" placeholder="Password"><br><br>
+  <button class="btn" onclick="signup()">Sign Up</button>
+  <button class="btn" onclick="login()">Login</button>
+</div>
 
-<h1>💰 <span id="coins">0</span></h1>
-<h3>Level: <span id="level">1</span> 🔥</h3>
+<!-- GAME -->
+<div id="game">
+  <h1>💰 <span id="coins">0</span></h1>
 
-<button class="tap" onclick="tap()">🚀</button>
+  <button class="tap" onclick="tap()">🚀</button><br>
 
-<br>
-
-<button class="btn" onclick="spin()">🎡</button>
-<button class="btn" onclick="openChest()">🎁</button>
-<button class="btn" onclick="activateBoost()">⚡</button>
-<button class="btn" onclick="buyAuto()">🤖</button>
-<button class="btn" onclick="share()">📲</button>
-<button class="btn" onclick="leaderboard()">🏆</button>
+  <button class="btn" onclick="buyVIP()">💎 VIP</button>
+  <button class="btn" onclick="withdraw()">💸 Withdraw</button>
+  <button class="btn" onclick="adminCheck()">👑 Admin</button>
+</div>
 
 <script type="module">
 
+// 🔥 FIREBASE
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, doc, setDoc, getDoc, updateDoc, increment, collection, query, orderBy, limit, getDocs } 
-from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { 
+  getFirestore, doc, setDoc, getDoc 
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+import {
+  getAuth, createUserWithEmailAndPassword,
+  signInWithEmailAndPassword, onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey:"YOUR_KEY",
@@ -101,141 +84,98 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const auth = getAuth(app);
 
-const tg = window.Telegram.WebApp;
-tg.expand();
-
-let userId = tg.initDataUnsafe?.user?.id?.toString() || "demo";
-
+let userId;
 let coins=0;
-let auto=0;
-let boost=1;
-let boostEnd=0;
-let lastChest=0;
+let isVIP=false;
+
+// LOGIN
+window.signup = ()=>{
+  let e=document.getElementById("email").value;
+  let p=document.getElementById("pass").value;
+
+  createUserWithEmailAndPassword(auth,e,p)
+  .then(()=>alert("Account Created"))
+}
+
+window.login = ()=>{
+  let e=document.getElementById("email").value;
+  let p=document.getElementById("pass").value;
+
+  signInWithEmailAndPassword(auth,e,p)
+}
+
+// SESSION
+onAuthStateChanged(auth, async(user)=>{
+  if(user){
+    userId=user.uid;
+
+    document.getElementById("loginBox").style.display="none";
+    document.getElementById("game").style.display="block";
+
+    let ref=doc(db,"users",userId);
+    let snap=await getDoc(ref);
+
+    if(snap.exists()){
+      coins=snap.data().coins||0;
+      isVIP=snap.data().isVIP||false;
+    }else{
+      await setDoc(ref,{coins:0,isVIP:false});
+    }
+
+    ui();
+  }
+});
 
 // UI
 function ui(){
   document.getElementById("coins").innerText=coins;
-  document.getElementById("level").innerText=Math.floor(coins/100)+1;
 }
 
-// reward anim
-function reward(x){
-  let el=document.getElementById("reward");
-  el.innerText="+"+x;
-  el.classList.add("show");
-  setTimeout(()=>el.classList.remove("show"),1000);
-}
-
-// load
-async function load(){
-  let ref=doc(db,"users",userId);
-  let snap=await getDoc(ref);
-
-  if(snap.exists()){
-    coins=Number(snap.data().coins)||0;
-    auto=snap.data().auto||0;
-  }else{
-    await setDoc(ref,{coins:0,auto:0});
-  }
-
-  ui();
-}
-
-// save
+// SAVE
 async function save(){
   await setDoc(doc(db,"users",userId),{
-    coins,auto
+    coins,isVIP
   });
 }
 
-// tap
+// TAP
 window.tap=()=>{
-  let gain=1*boost;
-  coins+=gain;
-  reward(gain);
+  coins+=isVIP?2:1;
   ui();
   save();
 }
 
-// auto
-window.buyAuto=()=>{
-  if(coins<200) return reward("❌");
-  coins-=200;
-  auto++;
-  save();
+// VIP PAYMENT
+window.buyVIP=()=>{
+  let options={
+    key:"YOUR_RAZORPAY_KEY",
+    amount:9900,
+    currency:"INR",
+    name:"VIP",
+    handler:function(){
+      isVIP=true;
+      save();
+      alert("VIP Activated");
+    }
+  };
+  new Razorpay(options).open();
 }
 
-// spin
-window.spin=()=>{
-  let r=Math.floor(Math.random()*200);
-  coins+=r;
-  reward(r);
-  ui();
-  save();
+// WITHDRAW
+window.withdraw=()=>{
+  alert("Request sent (manual payout)");
 }
 
-// chest
-window.openChest=()=>{
-  if(Date.now()-lastChest<60000) return reward("⏳");
-
-  let r=Math.floor(Math.random()*500)+50;
-  coins+=r;
-  lastChest=Date.now();
-
-  reward(r);
-  ui();
-  save();
+// ADMIN SECURITY
+window.adminCheck=()=>{
+  if(userId==="YOUR_ADMIN_UID"){
+    window.location.href="admin.html";
+  }else{
+    alert("Access Denied ❌");
+  }
 }
-
-// boost
-window.activateBoost=()=>{
-  if(coins<300) return reward("❌");
-
-  coins-=300;
-  boost=2;
-  boostEnd=Date.now()+30000;
-
-  reward("2X");
-  ui();
-  save();
-}
-
-// auto loop
-setInterval(()=>{
-  coins+=auto*boost;
-  ui();
-  save();
-},1000);
-
-// reset boost
-setInterval(()=>{
-  if(Date.now()>boostEnd) boost=1;
-},1000);
-
-// share
-window.share=()=>{
-  let link="https://t.me/tap2earn1995bot?start="+userId;
-  tg.openTelegramLink(link);
-}
-
-// leaderboard
-window.leaderboard=async()=>{
-  let q=query(collection(db,"users"),orderBy("coins","desc"),limit(5));
-  let snap=await getDocs(q);
-
-  let text="🏆\n";
-  let i=1;
-
-  snap.forEach(d=>{
-    text+=i+". "+d.id+" - "+d.data().coins+"\n";
-    i++;
-  });
-
-  alert(text);
-}
-
-load();
 
 </script>
 
