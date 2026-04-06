@@ -1,56 +1,155 @@
  <!DOCTYPE html>
 <html>
 <head>
-<title>Tap2Earn NO LOGIN</title>
+<title>Tap2Earn PRO UI</title>
 
+<!-- ICONS -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+
+<!-- FIREBASE -->
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
 <style>
 body{
   margin:0;
+  background:black;
+  color:white;
   text-align:center;
-  background:#000;
-  color:white;
   font-family:sans-serif;
+  padding-bottom:90px;
 }
 
-.btn{
-  margin:6px;
-  padding:10px;
-  background:#222;
-  border:none;
-  color:white;
-  border-radius:8px;
-}
-
+/* TAP BUTTON */
 .tap{
-  width:150px;height:150px;
+  width:180px;
+  height:180px;
   border-radius:50%;
-  background:#ff00cc;
-  font-size:25px;
+  background:radial-gradient(circle,#ff00cc,#330066);
   border:none;
   color:white;
+  font-size:30px;
+  box-shadow:0 0 40px #ff00cc;
+}
+
+/* REWARD POP */
+#reward{
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  font-size:28px;
+  opacity:0;
+}
+
+.show{
+  animation:pop 1s forwards;
+}
+
+@keyframes pop{
+  0%{opacity:0;}
+  50%{opacity:1;}
+  100%{opacity:0; transform:translate(-50%,-100px);}
+}
+
+/* FOOTER */
+.footer{
+  position:fixed;
+  bottom:0;
+  width:100%;
+  height:75px;
+  background:#111;
+  display:flex;
+  justify-content:space-around;
+  align-items:center;
+  border-top:1px solid #333;
+}
+
+/* ICON BUTTON */
+.nav-btn{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  font-size:11px;
+  color:#aaa;
+  background:none;
+  border:none;
+}
+
+.nav-btn i{
+  font-size:20px;
+}
+
+.nav-btn.active{
+  color:#ff00cc;
+  text-shadow:0 0 10px #ff00cc;
+  transform:scale(1.1);
 }
 </style>
 </head>
 
 <body>
 
+<div id="reward"></div>
+
 <h1>💰 <span id="coins">0</span></h1>
+<h3>Level: <span id="level">1</span></h3>
 
-<button class="tap" id="tapBtn">🚀</button><br>
+<br><br>
 
-<button class="btn" id="vipBtn">💎 VIP</button>
-<button class="btn" id="autoBtn">🤖 Auto</button>
-<button class="btn" id="chestBtn">🎁 Chest</button>
-<button class="btn" id="withdrawBtn">💸 Withdraw</button>
-<button class="btn" id="leaderBtn">🏆 Leaderboard</button>
-<button class="btn" id="refBtn">📲 Invite</button>
+<button class="tap" id="tapBtn">🚀</button>
+
+<!-- HIDDEN BUTTONS -->
+<button id="vipBtn" style="display:none"></button>
+<button id="autoBtn" style="display:none"></button>
+<button id="chestBtn" style="display:none"></button>
+<button id="withdrawBtn" style="display:none"></button>
+<button id="leaderBtn" style="display:none"></button>
+<button id="refBtn" style="display:none"></button>
+
+<!-- FOOTER -->
+<div class="footer">
+
+  <button class="nav-btn active" onclick="tab(this)">
+    <i class="fas fa-home"></i>
+    Home
+  </button>
+
+  <button class="nav-btn" onclick="vip()">
+    <i class="fas fa-gem"></i>
+    VIP
+  </button>
+
+  <button class="nav-btn" onclick="auto()">
+    <i class="fas fa-robot"></i>
+    Auto
+  </button>
+
+  <button class="nav-btn" onclick="chest()">
+    <i class="fas fa-gift"></i>
+    Chest
+  </button>
+
+  <button class="nav-btn" onclick="withdraw()">
+    <i class="fas fa-wallet"></i>
+    Cash
+  </button>
+
+  <button class="nav-btn" onclick="leader()">
+    <i class="fas fa-trophy"></i>
+    Rank
+  </button>
+
+  <button class="nav-btn" onclick="invite()">
+    <i class="fas fa-user-plus"></i>
+    Invite
+  </button>
+
+</div>
 
 <script>
 
-// 🔥 FIREBASE CONFIG
+// FIREBASE CONFIG
 const firebaseConfig = {
   apiKey:"YOUR_KEY",
   authDomain:"YOUR_DOMAIN",
@@ -60,40 +159,20 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-// 👤 AUTO USER ID (DEVICE BASED)
+// USER ID
 let userId = localStorage.getItem("userId");
-
 if(!userId){
-  userId = "user_" + Math.random().toString(36).substr(2,9);
-  localStorage.setItem("userId", userId);
+  userId="user_"+Math.random().toString(36).substr(2,9);
+  localStorage.setItem("userId",userId);
 }
 
-// 🎮 GAME DATA
-let coins = 0;
-let auto = 0;
-let isVIP = false;
-let lastChest = 0;
-
-// LOAD USER
-async function load(){
-  let ref = db.collection("users").doc(userId);
-  let doc = await ref.get();
-
-  if(doc.exists){
-    let d = doc.data();
-    coins = d.coins||0;
-    auto = d.auto||0;
-    isVIP = d.isVIP||false;
-  }else{
-    await ref.set({coins:0,auto:0,isVIP:false});
-  }
-
-  updateUI();
-}
+// DATA
+let coins=0, auto=0, isVIP=false, lastChest=0;
 
 // UI
-function updateUI(){
-  document.getElementById("coins").innerText = coins;
+function ui(){
+  coinsEl.innerText=coins;
+  level.innerText=Math.floor(coins/200)+1;
 }
 
 // SAVE
@@ -103,49 +182,75 @@ function save(){
   });
 }
 
-// TAP
-tapBtn.onclick = ()=>{
-  coins += isVIP?2:1;
-  updateUI();
-  save();
-};
+// LOAD
+async function load(){
+  let ref=db.collection("users").doc(userId);
+  let doc=await ref.get();
 
-// AUTO BUY
-autoBtn.onclick = ()=>{
-  if(coins<200) return alert("Need 200");
-  coins-=200;
-  auto++;
+  if(doc.exists){
+    let d=doc.data();
+    coins=d.coins||0;
+    auto=d.auto||0;
+    isVIP=d.isVIP||false;
+  }else{
+    ref.set({coins:0,auto:0,isVIP:false});
+  }
+
+  ui();
+}
+
+// REWARD
+function reward(x){
+  let el=document.getElementById("reward");
+  el.innerText="+"+x;
+  el.classList.add("show");
+  setTimeout(()=>el.classList.remove("show"),1000);
+}
+
+// TAP
+tapBtn.onclick=()=>{
+  let gain=isVIP?2:1;
+  coins+=gain;
+  reward(gain);
+  ui();
   save();
 };
 
 // AUTO LOOP
 setInterval(()=>{
-  coins += auto*(isVIP?2:1);
-  updateUI();
-  save();
+  coins+=auto*(isVIP?2:1);
+  ui();
 },1000);
 
-// CHEST
-chestBtn.onclick = ()=>{
-  if(Date.now()-lastChest<60000) return alert("Wait 1 min");
-  let reward = Math.floor(Math.random()*300)+50;
-  coins += reward;
-  lastChest = Date.now();
-  alert("+"+reward);
+// VIP
+vipBtn.onclick=()=>{
+  if(coins<500) return alert("Need 500");
+  coins-=500;
+  isVIP=true;
   save();
 };
 
-// VIP
-vipBtn.onclick = ()=>{
-  if(coins<500) return alert("Need 500 coins");
-  coins -= 500;
-  isVIP = true;
+// AUTO BUY
+autoBtn.onclick=()=>{
+  if(coins<300) return alert("Need 300");
+  coins-=300;
+  auto++;
+  save();
+};
+
+// CHEST
+chestBtn.onclick=()=>{
+  if(Date.now()-lastChest<60000) return alert("Wait");
+  let r=Math.floor(Math.random()*300)+50;
+  coins+=r;
+  lastChest=Date.now();
+  reward(r);
   save();
 };
 
 // WITHDRAW
-withdrawBtn.onclick = ()=>{
-  let amount = coins/100;
+withdrawBtn.onclick=()=>{
+  let amount=coins/100;
   if(amount<10) return alert("Min ₹10");
 
   db.collection("withdraws").add({
@@ -154,28 +259,38 @@ withdrawBtn.onclick = ()=>{
 
   coins=0;
   save();
-  alert("Request Sent 💸");
+  alert("Request sent 💸");
 };
 
 // LEADERBOARD
-leaderBtn.onclick = async()=>{
-  let snap = await db.collection("users")
+leaderBtn.onclick=async()=>{
+  let snap=await db.collection("users")
   .orderBy("coins","desc").limit(5).get();
 
-  let text="🏆\n";
-  snap.forEach(d=>{
-    text+=d.id+" : "+d.data().coins+"\n";
-  });
-
-  alert(text);
+  let t="🏆\n";
+  snap.forEach(d=>t+=d.data().coins+"\n");
+  alert(t);
 };
 
 // REFERRAL
-refBtn.onclick = ()=>{
-  let link = location.href+"?ref="+userId;
+refBtn.onclick=()=>{
+  let link=location.href+"?ref="+userId;
   navigator.clipboard.writeText(link);
-  alert("Link Copied 📲");
+  alert("Copied 📲");
 };
+
+// FOOTER FUNCTIONS
+function tab(el){
+  document.querySelectorAll(".nav-btn").forEach(b=>b.classList.remove("active"));
+  el.classList.add("active");
+}
+
+function vip(){vipBtn.click();}
+function auto(){autoBtn.click();}
+function chest(){chestBtn.click();}
+function withdraw(){withdrawBtn.click();}
+function leader(){leaderBtn.click();}
+function invite(){refBtn.click();}
 
 // INIT
 load();
