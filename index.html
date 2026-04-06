@@ -1,10 +1,12 @@
  <!DOCTYPE html>
 <html>
 <head>
-<title>Tap2Earn FINAL</title>
+<title>Tap2Earn ULTRA</title>
 
+<!-- ICONS -->
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
 
+<!-- FIREBASE -->
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
@@ -15,13 +17,12 @@ body{
   color:white;
   text-align:center;
   font-family:sans-serif;
-  padding-bottom:90px;
+  padding-bottom:100px;
 }
 
-/* TAP BUTTON */
+/* TAP */
 .tap{
-  width:180px;
-  height:180px;
+  width:180px;height:180px;
   border-radius:50%;
   background:radial-gradient(circle,#ff00cc,#330066);
   border:none;
@@ -39,15 +40,41 @@ body{
   font-size:28px;
   opacity:0;
 }
-
 .show{
   animation:pop 1s forwards;
 }
-
 @keyframes pop{
   0%{opacity:0;}
   50%{opacity:1;}
   100%{opacity:0; transform:translate(-50%,-100px);}
+}
+
+/* TOAST */
+#toast{
+  position:fixed;
+  bottom:110px;
+  left:50%;
+  transform:translateX(-50%);
+  background:#222;
+  padding:10px 20px;
+  border-radius:10px;
+  opacity:0;
+  transition:0.4s;
+}
+#toast.show{opacity:1;}
+
+/* PROGRESS */
+.progress{
+  width:80%;
+  height:8px;
+  background:#222;
+  margin:10px auto;
+  border-radius:10px;
+}
+#progressBar{
+  height:100%;
+  width:0%;
+  background:linear-gradient(90deg,#ff00cc,#00ffee);
 }
 
 /* FOOTER */
@@ -60,7 +87,6 @@ body{
   display:flex;
   justify-content:space-around;
   align-items:center;
-  border-top:1px solid #333;
 }
 
 .nav-btn{
@@ -72,11 +98,7 @@ body{
   background:none;
   border:none;
 }
-
-.nav-btn i{
-  font-size:20px;
-}
-
+.nav-btn i{font-size:20px;}
 .nav-btn.active{
   color:#ff00cc;
   text-shadow:0 0 10px #ff00cc;
@@ -88,52 +110,31 @@ body{
 <body>
 
 <div id="reward"></div>
+<div id="toast"></div>
 
 <h1>💰 <span id="coins">0</span></h1>
 <h3>Level: <span id="level">1</span></h3>
 
-<br><br>
+<h4 id="timerText">Chest Ready 🎁</h4>
+<div class="progress"><div id="progressBar"></div></div>
+
+<br>
 
 <button class="tap" id="tapBtn">🚀</button>
 
+<!-- SPIN -->
+<canvas id="wheel" width="260" height="260"></canvas><br>
+<button onclick="spin()">🎰 Spin</button>
+
 <!-- FOOTER -->
 <div class="footer">
-
-  <button class="nav-btn active" onclick="tab(this)">
-    <i class="fas fa-home"></i>
-    Home
-  </button>
-
-  <button class="nav-btn" onclick="vip()">
-    <i class="fas fa-gem"></i>
-    VIP
-  </button>
-
-  <button class="nav-btn" onclick="autoBuy()">
-    <i class="fas fa-robot"></i>
-    Auto
-  </button>
-
-  <button class="nav-btn" onclick="chest()">
-    <i class="fas fa-gift"></i>
-    Chest
-  </button>
-
-  <button class="nav-btn" onclick="withdraw()">
-    <i class="fas fa-wallet"></i>
-    Cash
-  </button>
-
-  <button class="nav-btn" onclick="leader()">
-    <i class="fas fa-trophy"></i>
-    Rank
-  </button>
-
-  <button class="nav-btn" onclick="invite()">
-    <i class="fas fa-user-plus"></i>
-    Invite
-  </button>
-
+  <button class="nav-btn active" onclick="tab(this)"><i class="fas fa-home"></i>Home</button>
+  <button class="nav-btn" onclick="vip()"><i class="fas fa-gem"></i>VIP</button>
+  <button class="nav-btn" onclick="autoBuy()"><i class="fas fa-robot"></i>Auto</button>
+  <button class="nav-btn" onclick="chest()"><i class="fas fa-gift"></i>Chest</button>
+  <button class="nav-btn" onclick="withdraw()"><i class="fas fa-wallet"></i>Cash</button>
+  <button class="nav-btn" onclick="leader()"><i class="fas fa-trophy"></i>Rank</button>
+  <button class="nav-btn" onclick="invite()"><i class="fas fa-user-plus"></i>Invite</button>
 </div>
 
 <script>
@@ -144,48 +145,30 @@ const firebaseConfig = {
   authDomain:"YOUR_DOMAIN",
   projectId:"YOUR_PROJECT_ID"
 };
-
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
 // USER
-let userId = localStorage.getItem("userId");
-if(!userId){
-  userId = "user_"+Math.random().toString(36).substr(2,9);
-  localStorage.setItem("userId", userId);
-}
+let userId = localStorage.getItem("userId") || ("user_"+Math.random());
+localStorage.setItem("userId",userId);
 
 // DATA
 let coins=0, auto=0, isVIP=false, lastChest=0;
+let lastSpin=0, spinning=false;
+let ctx=document.getElementById("wheel").getContext("2d");
 
 // UI
 function ui(){
-  document.getElementById("coins").innerText = coins;
-  document.getElementById("level").innerText = Math.floor(coins/200)+1;
+  document.getElementById("coins").innerText=coins;
+  document.getElementById("level").innerText=Math.floor(coins/200)+1;
 }
 
-// SAVE
-function save(){
-  db.collection("users").doc(userId).set({
-    coins,auto,isVIP
-  });
-}
-
-// LOAD
-async function load(){
-  let ref = db.collection("users").doc(userId);
-  let doc = await ref.get();
-
-  if(doc.exists){
-    let d = doc.data();
-    coins=d.coins||0;
-    auto=d.auto||0;
-    isVIP=d.isVIP||false;
-  }else{
-    ref.set({coins:0,auto:0,isVIP:false});
-  }
-
-  ui();
+// TOAST
+function showToast(msg){
+  let t=document.getElementById("toast");
+  t.innerText=msg;
+  t.classList.add("show");
+  setTimeout(()=>t.classList.remove("show"),2000);
 }
 
 // REWARD
@@ -196,82 +179,164 @@ function reward(x){
   setTimeout(()=>el.classList.remove("show"),1000);
 }
 
-// TAP
-document.getElementById("tapBtn").onclick = function(){
-  let gain = isVIP?2:1;
-  coins += gain;
-  reward(gain);
+// SAVE
+function save(){
+  db.collection("users").doc(userId).set({coins,auto,isVIP});
+}
+
+// LOAD
+async function load(){
+  let d=await db.collection("users").doc(userId).get();
+  if(d.exists){
+    coins=d.data().coins||0;
+    auto=d.data().auto||0;
+    isVIP=d.data().isVIP||false;
+  }
   ui();
-  save();
+}
+
+// TAP
+tapBtn.onclick=()=>{
+  let gain=isVIP?2:1;
+  coins+=gain;
+  reward(gain);
+  ui(); save();
 };
 
-// AUTO LOOP
+// AUTO
 setInterval(()=>{
-  coins += auto*(isVIP?2:1);
+  coins+=auto*(isVIP?2:1);
   ui();
 },1000);
 
 // VIP
 function vip(){
-  if(coins<500) return alert("Need 500");
-  coins -= 500;
-  isVIP = true;
-  save();
+  if(coins<500) return showToast("Need 500");
+  coins-=500; isVIP=true; save();
 }
 
 // AUTO BUY
 function autoBuy(){
-  if(coins<300) return alert("Need 300");
-  coins -= 300;
-  auto++;
-  save();
+  if(coins<300) return showToast("Need 300");
+  coins-=300; auto++; save();
 }
 
 // CHEST
 function chest(){
-  if(Date.now()-lastChest<60000) return alert("Wait 1 min");
-  let r = Math.floor(Math.random()*300)+50;
-  coins += r;
-  lastChest = Date.now();
-  reward(r);
-  save();
+  if(Date.now()-lastChest<60000) return showToast("⏳ Wait");
+  let r=Math.floor(Math.random()*300)+50;
+  coins+=r; lastChest=Date.now();
+  reward(r); save();
 }
+
+// TIMER
+setInterval(()=>{
+  let diff=Date.now()-lastChest;
+  let total=60000;
+
+  if(diff>=total){
+    timerText.innerText="Chest Ready 🎁";
+    progressBar.style.width="100%";
+  }else{
+    let left=Math.floor((total-diff)/1000);
+    timerText.innerText="⏳ "+left+"s";
+    progressBar.style.width=(diff/total*100)+"%";
+  }
+},500);
 
 // WITHDRAW
 function withdraw(){
-  let amount = coins/100;
-  if(amount<10) return alert("Min ₹10");
-
-  db.collection("withdraws").add({
-    userId,amount,status:"pending"
-  });
-
-  coins=0;
-  save();
-  alert("Request sent 💸");
+  let amt=coins/100;
+  if(amt<10) return showToast("Min ₹10");
+  db.collection("withdraws").add({userId,amt});
+  coins=0; save(); showToast("Sent 💸");
 }
 
-// LEADERBOARD
+// LEADER
 async function leader(){
-  let snap = await db.collection("users")
-  .orderBy("coins","desc").limit(5).get();
-
-  let t="🏆\n";
-  snap.forEach(d=>t+=d.data().coins+"\n");
+  let snap=await db.collection("users").orderBy("coins","desc").limit(5).get();
+  let t="🏆\n"; snap.forEach(d=>t+=d.data().coins+"\n");
   alert(t);
 }
 
-// REFERRAL
+// REF
 function invite(){
-  let link = location.href+"?ref="+userId;
+  let link=location.href+"?ref="+userId;
   navigator.clipboard.writeText(link);
-  alert("Copied 📲");
+  showToast("Copied 📲");
 }
 
-// TAB
+// FOOTER TAB
 function tab(el){
   document.querySelectorAll(".nav-btn").forEach(b=>b.classList.remove("active"));
   el.classList.add("active");
+}
+
+// 🎰 JACKPOT SPIN
+let rewards=[
+  {v:50,c:40},{v:100,c:25},{v:150,c:15},
+  {v:300,c:10},{v:500,c:7},{v:1000,c:3}
+];
+
+function getReward(){
+  let r=Math.random()*100,s=0;
+  for(let i of rewards){ s+=i.c; if(r<=s)return i.v;}
+}
+
+function drawWheel(){
+  let arc=2*Math.PI/rewards.length;
+  for(let i=0;i<rewards.length;i++){
+    ctx.beginPath();
+    ctx.fillStyle=rewards[i].v==1000?"gold":(i%2?"#ff00cc":"#330066");
+    ctx.moveTo(130,130);
+    ctx.arc(130,130,130,i*arc,(i+1)*arc);
+    ctx.fill();
+    ctx.fillStyle="#fff";
+    ctx.fillText(rewards[i].v,110,70);
+  }
+}
+drawWheel();
+
+function spin(){
+  if(spinning) return;
+  if(Date.now()-lastSpin<60000) return showToast("⏳ Wait spin");
+
+  spinning=true;
+  let spinAngle=Math.random()*2000+2000;
+  let start=null;
+
+  function anim(t){
+    if(!start) start=t;
+    let p=t-start;
+
+    ctx.clearRect(0,0,260,260);
+    ctx.save();
+    ctx.translate(130,130);
+    ctx.rotate((spinAngle*(1-p/3000))*Math.PI/180);
+    ctx.translate(-130,-130);
+    drawWheel();
+    ctx.restore();
+
+    if(p<3000) requestAnimationFrame(anim);
+    else finishSpin();
+  }
+  requestAnimationFrame(anim);
+}
+
+function finishSpin(){
+  spinning=false;
+  lastSpin=Date.now();
+
+  let win=getReward();
+  coins+=win; save();
+
+  if(win==1000){
+    document.body.style.background="gold";
+    showToast("💎 JACKPOT!");
+    setTimeout(()=>document.body.style.background="black",2000);
+  }
+
+  reward(win);
 }
 
 // INIT
