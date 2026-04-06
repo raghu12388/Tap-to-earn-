@@ -1,12 +1,10 @@
  <!DOCTYPE html>
 <html>
 <head>
-<title>Tap2Earn PRO UI</title>
+<title>Tap2Earn FINAL</title>
 
-<!-- ICONS -->
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
 
-<!-- FIREBASE -->
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
@@ -32,7 +30,7 @@ body{
   box-shadow:0 0 40px #ff00cc;
 }
 
-/* REWARD POP */
+/* REWARD */
 #reward{
   position:absolute;
   left:50%;
@@ -65,7 +63,6 @@ body{
   border-top:1px solid #333;
 }
 
-/* ICON BUTTON */
 .nav-btn{
   display:flex;
   flex-direction:column;
@@ -99,14 +96,6 @@ body{
 
 <button class="tap" id="tapBtn">🚀</button>
 
-<!-- HIDDEN BUTTONS -->
-<button id="vipBtn" style="display:none"></button>
-<button id="autoBtn" style="display:none"></button>
-<button id="chestBtn" style="display:none"></button>
-<button id="withdrawBtn" style="display:none"></button>
-<button id="leaderBtn" style="display:none"></button>
-<button id="refBtn" style="display:none"></button>
-
 <!-- FOOTER -->
 <div class="footer">
 
@@ -120,7 +109,7 @@ body{
     VIP
   </button>
 
-  <button class="nav-btn" onclick="auto()">
+  <button class="nav-btn" onclick="autoBuy()">
     <i class="fas fa-robot"></i>
     Auto
   </button>
@@ -159,11 +148,11 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-// USER ID
+// USER
 let userId = localStorage.getItem("userId");
 if(!userId){
-  userId="user_"+Math.random().toString(36).substr(2,9);
-  localStorage.setItem("userId",userId);
+  userId = "user_"+Math.random().toString(36).substr(2,9);
+  localStorage.setItem("userId", userId);
 }
 
 // DATA
@@ -171,8 +160,8 @@ let coins=0, auto=0, isVIP=false, lastChest=0;
 
 // UI
 function ui(){
-  coinsEl.innerText=coins;
-  level.innerText=Math.floor(coins/200)+1;
+  document.getElementById("coins").innerText = coins;
+  document.getElementById("level").innerText = Math.floor(coins/200)+1;
 }
 
 // SAVE
@@ -184,11 +173,11 @@ function save(){
 
 // LOAD
 async function load(){
-  let ref=db.collection("users").doc(userId);
-  let doc=await ref.get();
+  let ref = db.collection("users").doc(userId);
+  let doc = await ref.get();
 
   if(doc.exists){
-    let d=doc.data();
+    let d = doc.data();
     coins=d.coins||0;
     auto=d.auto||0;
     isVIP=d.isVIP||false;
@@ -208,9 +197,9 @@ function reward(x){
 }
 
 // TAP
-tapBtn.onclick=()=>{
-  let gain=isVIP?2:1;
-  coins+=gain;
+document.getElementById("tapBtn").onclick = function(){
+  let gain = isVIP?2:1;
+  coins += gain;
   reward(gain);
   ui();
   save();
@@ -218,39 +207,39 @@ tapBtn.onclick=()=>{
 
 // AUTO LOOP
 setInterval(()=>{
-  coins+=auto*(isVIP?2:1);
+  coins += auto*(isVIP?2:1);
   ui();
 },1000);
 
 // VIP
-vipBtn.onclick=()=>{
+function vip(){
   if(coins<500) return alert("Need 500");
-  coins-=500;
-  isVIP=true;
+  coins -= 500;
+  isVIP = true;
   save();
-};
+}
 
 // AUTO BUY
-autoBtn.onclick=()=>{
+function autoBuy(){
   if(coins<300) return alert("Need 300");
-  coins-=300;
+  coins -= 300;
   auto++;
   save();
-};
+}
 
 // CHEST
-chestBtn.onclick=()=>{
-  if(Date.now()-lastChest<60000) return alert("Wait");
-  let r=Math.floor(Math.random()*300)+50;
-  coins+=r;
-  lastChest=Date.now();
+function chest(){
+  if(Date.now()-lastChest<60000) return alert("Wait 1 min");
+  let r = Math.floor(Math.random()*300)+50;
+  coins += r;
+  lastChest = Date.now();
   reward(r);
   save();
-};
+}
 
 // WITHDRAW
-withdrawBtn.onclick=()=>{
-  let amount=coins/100;
+function withdraw(){
+  let amount = coins/100;
   if(amount<10) return alert("Min ₹10");
 
   db.collection("withdraws").add({
@@ -260,37 +249,30 @@ withdrawBtn.onclick=()=>{
   coins=0;
   save();
   alert("Request sent 💸");
-};
+}
 
 // LEADERBOARD
-leaderBtn.onclick=async()=>{
-  let snap=await db.collection("users")
+async function leader(){
+  let snap = await db.collection("users")
   .orderBy("coins","desc").limit(5).get();
 
   let t="🏆\n";
   snap.forEach(d=>t+=d.data().coins+"\n");
   alert(t);
-};
+}
 
 // REFERRAL
-refBtn.onclick=()=>{
-  let link=location.href+"?ref="+userId;
+function invite(){
+  let link = location.href+"?ref="+userId;
   navigator.clipboard.writeText(link);
   alert("Copied 📲");
-};
+}
 
-// FOOTER FUNCTIONS
+// TAB
 function tab(el){
   document.querySelectorAll(".nav-btn").forEach(b=>b.classList.remove("active"));
   el.classList.add("active");
 }
-
-function vip(){vipBtn.click();}
-function auto(){autoBtn.click();}
-function chest(){chestBtn.click();}
-function withdraw(){withdrawBtn.click();}
-function leader(){leaderBtn.click();}
-function invite(){refBtn.click();}
 
 // INIT
 load();
