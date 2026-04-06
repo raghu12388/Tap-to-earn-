@@ -1,18 +1,63 @@
  <!DOCTYPE html>
 <html>
 <head>
-  <title>Tap2Earn FINAL</title>
+  <title>Tap2Earn ULTIMATE</title>
 
   <!-- Telegram -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <!-- Firebase -->
+  <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import {
+    getFirestore, doc, setDoc, getDoc, updateDoc, increment,
+    collection, query, orderBy, limit, getDocs
+  } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "YOUR_KEY",
+    authDomain: "YOUR_DOMAIN",
+    projectId: "YOUR_PROJECT_ID",
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  window.db = db;
+  window.firebaseFunctions = { doc, setDoc, getDoc, updateDoc, increment, collection, query, orderBy, limit, getDocs };
+  </script>
 
   <style>
     body {
       margin:0;
       text-align:center;
       font-family:sans-serif;
-      background:#000;
       color:white;
+      overflow:hidden;
+
+      background: linear-gradient(-45deg,#0f0f0f,#1a0033,#000,#001a33);
+      background-size:400% 400%;
+      animation:gradientBG 10s infinite;
+    }
+
+    @keyframes gradientBG {
+      0% {background-position:0% 50%;}
+      50% {background-position:100% 50%;}
+      100% {background-position:0% 50%;}
+    }
+
+    body::after {
+      content:"";
+      position:fixed;
+      width:100%;
+      height:100%;
+      background: radial-gradient(circle, rgba(255,0,255,0.15), transparent);
+      animation:glow 4s infinite alternate;
+    }
+
+    @keyframes glow {
+      from {opacity:0.2;}
+      to {opacity:0.6;}
     }
 
     .tap-btn {
@@ -23,179 +68,191 @@
       background:linear-gradient(45deg,#ff00cc,#3333ff);
       color:white;
       font-size:24px;
+      border:none;
+      animation:pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% {box-shadow:0 0 10px #ff00cc;}
+      50% {box-shadow:0 0 40px #ff00cc;}
+      100% {box-shadow:0 0 10px #ff00cc;}
     }
 
     .btn {
-      margin:8px;
+      margin:6px;
       padding:10px;
       background:#222;
       color:white;
       border:none;
+      border-radius:8px;
+    }
+
+    #particles span {
+      position:absolute;
+      width:4px;
+      height:4px;
+      background:white;
+      animation:move 10s linear infinite;
+    }
+
+    @keyframes move {
+      from {transform:translateY(100vh);}
+      to {transform:translateY(-10vh);}
     }
   </style>
 </head>
 
 <body>
 
+<div id="particles"></div>
+
 <h1>💰 <span id="coins">0</span></h1>
-<h3>Level: <span id="level">1</span></h3>
+<h3>Level: <span id="level">1</span> 🔥</h3>
 
 <button class="tap-btn" onclick="tap()">🚀</button>
 
 <br>
-<button class="btn" onclick="spin()">🎡 Spin</button>
-<button class="btn" onclick="buyAuto()">⚡ Auto</button>
-<button class="btn" onclick="withdraw()">💸 Withdraw</button>
-<button class="btn" onclick="share()">📲 Invite</button>
-<button class="btn" onclick="showLeaderboard()">🏆 Leaderboard</button>
+<button class="btn" onclick="spin()">🎡</button>
+<button class="btn" onclick="buyAuto()">⚡</button>
+<button class="btn" onclick="dailyBonus()">🎁</button>
+<button class="btn" onclick="withdraw()">💸</button>
+<button class="btn" onclick="share()">📲</button>
+<button class="btn" onclick="showLeaderboard()">🏆</button>
 
 <script type="module">
 
-// 🔥 FIREBASE IMPORT
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import {
-  getFirestore,
-  doc,
-  setDoc,
-  getDoc,
-  updateDoc,
-  increment,
-  collection,
-  query,
-  orderBy,
-  limit,
-  getDocs
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-// 🔑 YOUR CONFIG
-const firebaseConfig = {
-  apiKey: "YOUR_KEY",
-  authDomain: "YOUR_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-// TELEGRAM
 const tg = window.Telegram.WebApp;
 tg.expand();
 
+const { doc, setDoc, getDoc, updateDoc, increment,
+        collection, query, orderBy, limit, getDocs } = window.firebaseFunctions;
+
+const db = window.db;
+
 let userId = tg.initDataUnsafe?.user?.id?.toString() || "demo";
 
-// REFERRAL
+// referral
 const params = new URLSearchParams(window.location.search);
 const ref = params.get("start");
 
-// DATA
 let coins = 0;
 let autoTap = 0;
 
-// LOAD
-async function load() {
-  const refDoc = doc(db, "users", userId);
-  const snap = await getDoc(refDoc);
+// sounds
+const tapSound = new Audio("https://www.soundjay.com/button/sounds/button-16.mp3");
 
-  if (snap.exists()) {
-    let data = snap.data();
-    coins = data.coins || 0;
-    autoTap = data.autoTap || 0;
+// particles
+for(let i=0;i<40;i++){
+  let p=document.createElement("span");
+  p.style.left=Math.random()*100+"%";
+  p.style.animationDuration=(5+Math.random()*5)+"s";
+  document.getElementById("particles").appendChild(p);
+}
+
+// load
+async function load(){
+  let refDoc = doc(db,"users",userId);
+  let snap = await getDoc(refDoc);
+
+  if(snap.exists()){
+    coins = snap.data().coins || 0;
+    autoTap = snap.data().autoTap || 0;
   } else {
-    await setDoc(refDoc, { coins: 0, autoTap: 0 });
+    await setDoc(refDoc,{coins:0,autoTap:0});
   }
 
-  // 🔥 REFERRAL REWARD
-  if (ref && ref !== userId) {
-    const refUser = doc(db, "users", ref);
-    await updateDoc(refUser, {
-      coins: increment(50)
-    });
+  // referral reward
+  if(ref && ref !== userId){
+    let refUser = doc(db,"users",ref);
+    await updateDoc(refUser,{coins:increment(50)});
   }
 
   updateUI();
 }
 
-// SAVE
-async function save() {
-  const refDoc = doc(db, "users", userId);
-
-  await setDoc(refDoc, {
-    coins,
-    autoTap,
-    updatedAt: Date.now()
+// save
+async function save(){
+  await setDoc(doc(db,"users",userId),{
+    coins,autoTap,updatedAt:Date.now()
   });
 }
 
 // UI
-function updateUI() {
+function updateUI(){
   document.getElementById("coins").innerText = coins;
   document.getElementById("level").innerText = Math.floor(coins/100)+1;
 }
 
-// TAP
-window.tap = function () {
+// tap
+window.tap = function(){
   coins++;
+  tapSound.play();
   updateUI();
   save();
 }
 
-// AUTO
-window.buyAuto = function () {
-  if (coins < 200) return alert("Need 200 ❌");
-  coins -= 200;
+// auto
+window.buyAuto = function(){
+  if(coins<200) return alert("Need 200");
+  coins-=200;
   autoTap++;
-  updateUI();
   save();
 }
 
-// SPIN
-window.spin = function () {
-  let reward = Math.floor(Math.random()*200);
-  coins += reward;
-  alert("🎡 Won " + reward);
-  updateUI();
+// spin
+window.spin = function(){
+  let r=Math.floor(Math.random()*200);
+  coins+=r;
+  alert("Won "+r);
   save();
+  updateUI();
 }
 
-// WITHDRAW
-window.withdraw = function () {
-  if (coins < 1000) return alert("Min 1000 ❌");
-  alert("💸 Withdrawal request sent!");
-  coins = 0;
-  updateUI();
+// bonus
+window.dailyBonus = function(){
+  coins+=100;
+  alert("+100");
   save();
+  updateUI();
 }
 
-// SHARE
-window.share = function () {
-  let link = "https://t.me/tap2earn1995bot?start=" + userId;
+// withdraw
+window.withdraw = function(){
+  if(coins<1000) return alert("Min 1000");
+  alert("Request sent");
+  coins=0;
+  save();
+  updateUI();
+}
+
+// share
+window.share = function(){
+  let link="https://t.me/tap2earn1995bot?start="+userId;
   tg.openTelegramLink(link);
 }
 
-// LEADERBOARD
-window.showLeaderboard = async function () {
-  const q = query(collection(db, "users"), orderBy("coins","desc"), limit(5));
-  const snap = await getDocs(q);
+// leaderboard
+window.showLeaderboard = async function(){
+  let q=query(collection(db,"users"),orderBy("coins","desc"),limit(5));
+  let snap=await getDocs(q);
 
-  let text = "🏆 TOP PLAYERS:\n\n";
-
-  let i = 1;
-  snap.forEach(doc => {
-    text += i + ". " + doc.id + " - " + doc.data().coins + " 💰\n";
+  let text="🏆 TOP:\n";
+  let i=1;
+  snap.forEach(d=>{
+    text+=i+". "+d.id+" - "+d.data().coins+"\n";
     i++;
   });
 
   alert(text);
 }
 
-// AUTO LOOP
+// auto loop
 setInterval(()=>{
-  coins += autoTap;
+  coins+=autoTap;
   updateUI();
   save();
 },1000);
 
-// INIT
 load();
 
 </script>
