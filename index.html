@@ -1,10 +1,9 @@
  <!DOCTYPE html>
 <html>
 <head>
-<title>Tap2Earn PRO</title>
+<title>Tap2Earn NO LOGIN</title>
 
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
 <style>
@@ -33,39 +32,25 @@ body{
   border:none;
   color:white;
 }
-
-#game{display:none;}
 </style>
 </head>
 
 <body>
 
-<!-- LOGIN -->
-<div id="loginBox">
-  <h2>🔐 Login</h2>
-  <input id="email" placeholder="Email"><br><br>
-  <input id="pass" type="password" placeholder="Password"><br><br>
-  <button class="btn" id="signupBtn">Sign Up</button>
-  <button class="btn" id="loginBtn">Login</button>
-</div>
+<h1>💰 <span id="coins">0</span></h1>
 
-<!-- GAME -->
-<div id="game">
-  <h1>💰 <span id="coins">0</span></h1>
+<button class="tap" id="tapBtn">🚀</button><br>
 
-  <button class="tap" id="tapBtn">🚀</button><br>
-
-  <button class="btn" id="vipBtn">💎 VIP</button>
-  <button class="btn" id="autoBtn">🤖 Auto</button>
-  <button class="btn" id="chestBtn">🎁 Chest</button>
-  <button class="btn" id="withdrawBtn">💸 Withdraw</button>
-  <button class="btn" id="leaderBtn">🏆 Leaderboard</button>
-  <button class="btn" id="refBtn">📲 Invite</button>
-</div>
+<button class="btn" id="vipBtn">💎 VIP</button>
+<button class="btn" id="autoBtn">🤖 Auto</button>
+<button class="btn" id="chestBtn">🎁 Chest</button>
+<button class="btn" id="withdrawBtn">💸 Withdraw</button>
+<button class="btn" id="leaderBtn">🏆 Leaderboard</button>
+<button class="btn" id="refBtn">📲 Invite</button>
 
 <script>
 
-// 🔥 CONFIG
+// 🔥 FIREBASE CONFIG
 const firebaseConfig = {
   apiKey:"YOUR_KEY",
   authDomain:"YOUR_DOMAIN",
@@ -73,55 +58,42 @@ const firebaseConfig = {
 };
 
 firebase.initializeApp(firebaseConfig);
-
-const auth = firebase.auth();
 const db = firebase.firestore();
 
-let userId;
+// 👤 AUTO USER ID (DEVICE BASED)
+let userId = localStorage.getItem("userId");
+
+if(!userId){
+  userId = "user_" + Math.random().toString(36).substr(2,9);
+  localStorage.setItem("userId", userId);
+}
+
+// 🎮 GAME DATA
 let coins = 0;
 let auto = 0;
 let isVIP = false;
 let lastChest = 0;
 
-// LOGIN
-signupBtn.onclick = ()=>{
-  auth.createUserWithEmailAndPassword(email.value,pass.value)
-  .then(()=>alert("Account Created"))
-  .catch(e=>alert(e.message));
-};
+// LOAD USER
+async function load(){
+  let ref = db.collection("users").doc(userId);
+  let doc = await ref.get();
 
-loginBtn.onclick = ()=>{
-  auth.signInWithEmailAndPassword(email.value,pass.value)
-  .catch(e=>alert(e.message));
-};
-
-// SESSION
-auth.onAuthStateChanged(async user=>{
-  if(user){
-    userId = user.uid;
-
-    loginBox.style.display="none";
-    game.style.display="block";
-
-    let ref = db.collection("users").doc(userId);
-    let doc = await ref.get();
-
-    if(doc.exists){
-      let d = doc.data();
-      coins = d.coins||0;
-      auto = d.auto||0;
-      isVIP = d.isVIP||false;
-    }else{
-      await ref.set({coins:0,auto:0,isVIP:false});
-    }
-
-    updateUI();
+  if(doc.exists){
+    let d = doc.data();
+    coins = d.coins||0;
+    auto = d.auto||0;
+    isVIP = d.isVIP||false;
+  }else{
+    await ref.set({coins:0,auto:0,isVIP:false});
   }
-});
+
+  updateUI();
+}
 
 // UI
 function updateUI(){
-  coinsEl.innerText = coins;
+  document.getElementById("coins").innerText = coins;
 }
 
 // SAVE
@@ -182,7 +154,7 @@ withdrawBtn.onclick = ()=>{
 
   coins=0;
   save();
-  alert("Request Sent");
+  alert("Request Sent 💸");
 };
 
 // LEADERBOARD
@@ -204,6 +176,9 @@ refBtn.onclick = ()=>{
   navigator.clipboard.writeText(link);
   alert("Link Copied 📲");
 };
+
+// INIT
+load();
 
 </script>
 
