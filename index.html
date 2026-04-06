@@ -1,243 +1,232 @@
  <!DOCTYPE html>
 <html>
 <head>
-  <title>Tap2Earn ULTIMATE</title>
+<title>Tap2Earn PRO</title>
 
-  <!-- Telegram -->
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-  <!-- Firebase -->
-  <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-  import {
-    getFirestore, doc, setDoc, getDoc, updateDoc, increment,
-    collection, query, orderBy, limit, getDocs
-  } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+<style>
+body{
+  margin:0;
+  text-align:center;
+  font-family:sans-serif;
+  color:white;
+  overflow:hidden;
+  background:linear-gradient(-45deg,#0f0f0f,#1a0033,#000,#001a33);
+  background-size:400% 400%;
+  animation:bg 10s infinite;
+}
 
-  const firebaseConfig = {
-    apiKey: "YOUR_KEY",
-    authDomain: "YOUR_DOMAIN",
-    projectId: "YOUR_PROJECT_ID",
-  };
+@keyframes bg{
+  0%{background-position:0% 50%;}
+  50%{background-position:100% 50%;}
+  100%{background-position:0% 50%;}
+}
 
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+.tap{
+  width:150px;height:150px;
+  border-radius:50%;
+  font-size:25px;
+  background:linear-gradient(45deg,#ff00cc,#3333ff);
+  animation:pulse 1.5s infinite;
+  border:none;color:white;
+}
 
-  window.db = db;
-  window.firebaseFunctions = { doc, setDoc, getDoc, updateDoc, increment, collection, query, orderBy, limit, getDocs };
-  </script>
+@keyframes pulse{
+  0%{box-shadow:0 0 10px #ff00cc;}
+  50%{box-shadow:0 0 40px #ff00cc;}
+  100%{box-shadow:0 0 10px #ff00cc;}
+}
 
-  <style>
-    body {
-      margin:0;
-      text-align:center;
-      font-family:sans-serif;
-      color:white;
-      overflow:hidden;
+.btn{
+  margin:5px;
+  padding:10px;
+  background:#222;
+  border:none;
+  color:white;
+  border-radius:8px;
+}
 
-      background: linear-gradient(-45deg,#0f0f0f,#1a0033,#000,#001a33);
-      background-size:400% 400%;
-      animation:gradientBG 10s infinite;
-    }
+#reward{
+  position:fixed;
+  top:40%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  font-size:28px;
+  color:gold;
+  opacity:0;
+}
 
-    @keyframes gradientBG {
-      0% {background-position:0% 50%;}
-      50% {background-position:100% 50%;}
-      100% {background-position:0% 50%;}
-    }
+.show{
+  animation:pop 1s forwards;
+}
 
-    body::after {
-      content:"";
-      position:fixed;
-      width:100%;
-      height:100%;
-      background: radial-gradient(circle, rgba(255,0,255,0.15), transparent);
-      animation:glow 4s infinite alternate;
-    }
-
-    @keyframes glow {
-      from {opacity:0.2;}
-      to {opacity:0.6;}
-    }
-
-    .tap-btn {
-      margin-top:40px;
-      width:160px;
-      height:160px;
-      border-radius:50%;
-      background:linear-gradient(45deg,#ff00cc,#3333ff);
-      color:white;
-      font-size:24px;
-      border:none;
-      animation:pulse 1.5s infinite;
-    }
-
-    @keyframes pulse {
-      0% {box-shadow:0 0 10px #ff00cc;}
-      50% {box-shadow:0 0 40px #ff00cc;}
-      100% {box-shadow:0 0 10px #ff00cc;}
-    }
-
-    .btn {
-      margin:6px;
-      padding:10px;
-      background:#222;
-      color:white;
-      border:none;
-      border-radius:8px;
-    }
-
-    #particles span {
-      position:absolute;
-      width:4px;
-      height:4px;
-      background:white;
-      animation:move 10s linear infinite;
-    }
-
-    @keyframes move {
-      from {transform:translateY(100vh);}
-      to {transform:translateY(-10vh);}
-    }
-  </style>
+@keyframes pop{
+  0%{opacity:0; transform:translate(-50%,0);}
+  50%{opacity:1; transform:translate(-50%,-30px);}
+  100%{opacity:0; transform:translate(-50%,-80px);}
+}
+</style>
 </head>
 
 <body>
 
-<div id="particles"></div>
+<div id="reward"></div>
 
 <h1>💰 <span id="coins">0</span></h1>
 <h3>Level: <span id="level">1</span> 🔥</h3>
 
-<button class="tap-btn" onclick="tap()">🚀</button>
+<button class="tap" onclick="tap()">🚀</button>
 
 <br>
+
 <button class="btn" onclick="spin()">🎡</button>
-<button class="btn" onclick="buyAuto()">⚡</button>
-<button class="btn" onclick="dailyBonus()">🎁</button>
-<button class="btn" onclick="withdraw()">💸</button>
+<button class="btn" onclick="openChest()">🎁</button>
+<button class="btn" onclick="activateBoost()">⚡</button>
+<button class="btn" onclick="buyAuto()">🤖</button>
 <button class="btn" onclick="share()">📲</button>
-<button class="btn" onclick="showLeaderboard()">🏆</button>
+<button class="btn" onclick="leaderboard()">🏆</button>
 
 <script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, doc, setDoc, getDoc, updateDoc, increment, collection, query, orderBy, limit, getDocs } 
+from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey:"YOUR_KEY",
+  authDomain:"YOUR_DOMAIN",
+  projectId:"YOUR_PROJECT_ID"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
 const tg = window.Telegram.WebApp;
 tg.expand();
 
-const { doc, setDoc, getDoc, updateDoc, increment,
-        collection, query, orderBy, limit, getDocs } = window.firebaseFunctions;
-
-const db = window.db;
-
 let userId = tg.initDataUnsafe?.user?.id?.toString() || "demo";
 
-// referral
-const params = new URLSearchParams(window.location.search);
-const ref = params.get("start");
+let coins=0;
+let auto=0;
+let boost=1;
+let boostEnd=0;
+let lastChest=0;
 
-let coins = 0;
-let autoTap = 0;
+// UI
+function ui(){
+  document.getElementById("coins").innerText=coins;
+  document.getElementById("level").innerText=Math.floor(coins/100)+1;
+}
 
-// sounds
-const tapSound = new Audio("https://www.soundjay.com/button/sounds/button-16.mp3");
-
-// particles
-for(let i=0;i<40;i++){
-  let p=document.createElement("span");
-  p.style.left=Math.random()*100+"%";
-  p.style.animationDuration=(5+Math.random()*5)+"s";
-  document.getElementById("particles").appendChild(p);
+// reward anim
+function reward(x){
+  let el=document.getElementById("reward");
+  el.innerText="+"+x;
+  el.classList.add("show");
+  setTimeout(()=>el.classList.remove("show"),1000);
 }
 
 // load
 async function load(){
-  let refDoc = doc(db,"users",userId);
-  let snap = await getDoc(refDoc);
+  let ref=doc(db,"users",userId);
+  let snap=await getDoc(ref);
 
   if(snap.exists()){
-    coins = snap.data().coins || 0;
-    autoTap = snap.data().autoTap || 0;
-  } else {
-    await setDoc(refDoc,{coins:0,autoTap:0});
+    coins=Number(snap.data().coins)||0;
+    auto=snap.data().auto||0;
+  }else{
+    await setDoc(ref,{coins:0,auto:0});
   }
 
-  // referral reward
-  if(ref && ref !== userId){
-    let refUser = doc(db,"users",ref);
-    await updateDoc(refUser,{coins:increment(50)});
-  }
-
-  updateUI();
+  ui();
 }
 
 // save
 async function save(){
   await setDoc(doc(db,"users",userId),{
-    coins,autoTap,updatedAt:Date.now()
+    coins,auto
   });
 }
 
-// UI
-function updateUI(){
-  document.getElementById("coins").innerText = coins;
-  document.getElementById("level").innerText = Math.floor(coins/100)+1;
-}
-
 // tap
-window.tap = function(){
-  coins++;
-  tapSound.play();
-  updateUI();
+window.tap=()=>{
+  let gain=1*boost;
+  coins+=gain;
+  reward(gain);
+  ui();
   save();
 }
 
 // auto
-window.buyAuto = function(){
-  if(coins<200) return alert("Need 200");
+window.buyAuto=()=>{
+  if(coins<200) return reward("❌");
   coins-=200;
-  autoTap++;
+  auto++;
   save();
 }
 
 // spin
-window.spin = function(){
+window.spin=()=>{
   let r=Math.floor(Math.random()*200);
   coins+=r;
-  alert("Won "+r);
+  reward(r);
+  ui();
   save();
-  updateUI();
 }
 
-// bonus
-window.dailyBonus = function(){
-  coins+=100;
-  alert("+100");
+// chest
+window.openChest=()=>{
+  if(Date.now()-lastChest<60000) return reward("⏳");
+
+  let r=Math.floor(Math.random()*500)+50;
+  coins+=r;
+  lastChest=Date.now();
+
+  reward(r);
+  ui();
   save();
-  updateUI();
 }
 
-// withdraw
-window.withdraw = function(){
-  if(coins<1000) return alert("Min 1000");
-  alert("Request sent");
-  coins=0;
+// boost
+window.activateBoost=()=>{
+  if(coins<300) return reward("❌");
+
+  coins-=300;
+  boost=2;
+  boostEnd=Date.now()+30000;
+
+  reward("2X");
+  ui();
   save();
-  updateUI();
 }
+
+// auto loop
+setInterval(()=>{
+  coins+=auto*boost;
+  ui();
+  save();
+},1000);
+
+// reset boost
+setInterval(()=>{
+  if(Date.now()>boostEnd) boost=1;
+},1000);
 
 // share
-window.share = function(){
+window.share=()=>{
   let link="https://t.me/tap2earn1995bot?start="+userId;
   tg.openTelegramLink(link);
 }
 
 // leaderboard
-window.showLeaderboard = async function(){
+window.leaderboard=async()=>{
   let q=query(collection(db,"users"),orderBy("coins","desc"),limit(5));
   let snap=await getDocs(q);
 
-  let text="🏆 TOP:\n";
+  let text="🏆\n";
   let i=1;
+
   snap.forEach(d=>{
     text+=i+". "+d.id+" - "+d.data().coins+"\n";
     i++;
@@ -245,13 +234,6 @@ window.showLeaderboard = async function(){
 
   alert(text);
 }
-
-// auto loop
-setInterval(()=>{
-  coins+=autoTap;
-  updateUI();
-  save();
-},1000);
 
 load();
 
