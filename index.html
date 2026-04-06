@@ -1,7 +1,9 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html>
 <head>
-  <title>Tap2Earn ULTRA PRO</title>
+  <title>Tap2Earn FINAL</title>
+
+  <!-- Telegram -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
   <style>
@@ -11,67 +13,24 @@
       font-family:sans-serif;
       background:#000;
       color:white;
-      overflow:hidden;
-      animation: glowBg 5s infinite alternate;
     }
-
-    @keyframes glowBg {
-      0% {background:#000;}
-      100% {background:#0a0a1a;}
-    }
-
-    h1 { margin-top:20px; }
-
-    .level { color:#00ffcc; }
 
     .tap-btn {
       margin-top:40px;
       width:160px;
       height:160px;
       border-radius:50%;
-      font-size:24px;
-      background: linear-gradient(45deg,#ff00cc,#3333ff);
-      border:none;
+      background:linear-gradient(45deg,#ff00cc,#3333ff);
       color:white;
-      animation: pulse 1.5s infinite;
-    }
-
-    @keyframes pulse {
-      0% {box-shadow:0 0 10px #ff00cc;}
-      50% {box-shadow:0 0 40px #ff00cc;}
-      100% {box-shadow:0 0 10px #ff00cc;}
+      font-size:24px;
     }
 
     .btn {
       margin:8px;
-      padding:10px 18px;
-      border:none;
-      border-radius:8px;
+      padding:10px;
       background:#222;
       color:white;
-    }
-
-    .explosion {
-      position:absolute;
-      width:10px;
-      height:10px;
-      background:gold;
-      border-radius:50%;
-      animation:boom 0.8s forwards;
-    }
-
-    @keyframes boom {
-      to {
-        transform: translate(var(--x), var(--y)) scale(0);
-        opacity:0;
-      }
-    }
-
-    @keyframes fall {
-      to {
-        transform: translateY(500px);
-        opacity:0;
-      }
+      border:none;
     }
   </style>
 </head>
@@ -79,44 +38,92 @@
 <body>
 
 <h1>💰 <span id="coins">0</span></h1>
-<div class="level">Level: <span id="level">1</span> 🔥</div>
+<h3>Level: <span id="level">1</span></h3>
 
 <button class="tap-btn" onclick="tap()">🚀</button>
 
 <br>
-
 <button class="btn" onclick="spin()">🎡 Spin</button>
 <button class="btn" onclick="buyAuto()">⚡ Auto</button>
-<button class="btn" onclick="dailyBonus()">🎁 Bonus</button>
 <button class="btn" onclick="withdraw()">💸 Withdraw</button>
 <button class="btn" onclick="share()">📲 Invite</button>
 <button class="btn" onclick="showLeaderboard()">🏆 Leaderboard</button>
 
-<script>
+<script type="module">
+
+// 🔥 FIREBASE IMPORT
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import {
+  getFirestore,
+  doc,
+  setDoc,
+  getDoc,
+  updateDoc,
+  increment,
+  collection,
+  query,
+  orderBy,
+  limit,
+  getDocs
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+// 🔑 YOUR CONFIG
+const firebaseConfig = {
+  apiKey: "YOUR_KEY",
+  authDomain: "YOUR_DOMAIN",
+  projectId: "YOUR_PROJECT_ID",
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// TELEGRAM
 const tg = window.Telegram.WebApp;
 tg.expand();
 
-let userId = tg.initDataUnsafe?.user?.id || "demo";
+let userId = tg.initDataUnsafe?.user?.id?.toString() || "demo";
 
-// SOUND
-const tapSound = new Audio("https://www.soundjay.com/button/sounds/button-16.mp3");
-const winSound = new Audio("https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3");
+// REFERRAL
+const params = new URLSearchParams(window.location.search);
+const ref = params.get("start");
 
 // DATA
 let coins = 0;
 let autoTap = 0;
 
 // LOAD
-function load() {
-  let data = JSON.parse(localStorage.getItem(userId)) || {};
-  coins = parseInt(data.coins) || 0;
-  autoTap = parseInt(data.autoTap) || 0;
+async function load() {
+  const refDoc = doc(db, "users", userId);
+  const snap = await getDoc(refDoc);
+
+  if (snap.exists()) {
+    let data = snap.data();
+    coins = data.coins || 0;
+    autoTap = data.autoTap || 0;
+  } else {
+    await setDoc(refDoc, { coins: 0, autoTap: 0 });
+  }
+
+  // 🔥 REFERRAL REWARD
+  if (ref && ref !== userId) {
+    const refUser = doc(db, "users", ref);
+    await updateDoc(refUser, {
+      coins: increment(50)
+    });
+  }
+
   updateUI();
 }
 
 // SAVE
-function save() {
-  localStorage.setItem(userId, JSON.stringify({coins, autoTap}));
+async function save() {
+  const refDoc = doc(db, "users", userId);
+
+  await setDoc(refDoc, {
+    coins,
+    autoTap,
+    updatedAt: Date.now()
+  });
 }
 
 // UI
@@ -126,33 +133,59 @@ function updateUI() {
 }
 
 // TAP
-function tap() {
+window.tap = function () {
   coins++;
-  tapSound.play();
-
-  // explosion
-  for(let i=0;i<8;i++){
-    let e = document.createElement("div");
-    e.className = "explosion";
-    e.style.setProperty('--x',(Math.random()-0.5)*200+"px");
-    e.style.setProperty('--y',(Math.random()-0.5)*200+"px");
-    e.style.left = "50%";
-    e.style.top = "50%";
-    document.body.appendChild(e);
-    setTimeout(()=>e.remove(),800);
-  }
-
   updateUI();
   save();
 }
 
 // AUTO
-function buyAuto() {
-  if(coins<200) return alert("Need 200 ❌");
+window.buyAuto = function () {
+  if (coins < 200) return alert("Need 200 ❌");
   coins -= 200;
   autoTap++;
-  alert("⚡ Auto Activated");
+  updateUI();
   save();
+}
+
+// SPIN
+window.spin = function () {
+  let reward = Math.floor(Math.random()*200);
+  coins += reward;
+  alert("🎡 Won " + reward);
+  updateUI();
+  save();
+}
+
+// WITHDRAW
+window.withdraw = function () {
+  if (coins < 1000) return alert("Min 1000 ❌");
+  alert("💸 Withdrawal request sent!");
+  coins = 0;
+  updateUI();
+  save();
+}
+
+// SHARE
+window.share = function () {
+  let link = "https://t.me/tap2earn1995bot?start=" + userId;
+  tg.openTelegramLink(link);
+}
+
+// LEADERBOARD
+window.showLeaderboard = async function () {
+  const q = query(collection(db, "users"), orderBy("coins","desc"), limit(5));
+  const snap = await getDocs(q);
+
+  let text = "🏆 TOP PLAYERS:\n\n";
+
+  let i = 1;
+  snap.forEach(doc => {
+    text += i + ". " + doc.id + " - " + doc.data().coins + " 💰\n";
+    i++;
+  });
+
+  alert(text);
 }
 
 // AUTO LOOP
@@ -162,76 +195,10 @@ setInterval(()=>{
   save();
 },1000);
 
-// BONUS
-function dailyBonus(){
-  coins += 100;
-  alert("🎁 +100 coins");
-  winSound.play();
-  updateUI();
-  save();
-}
-
-// SPIN
-function spin(){
-  let reward = Math.floor(Math.random()*200);
-  coins += reward;
-  alert("🎡 Won "+reward);
-  winSound.play();
-  coinRain();
-  updateUI();
-  save();
-}
-
-// COIN RAIN
-function coinRain(){
-  for(let i=0;i<15;i++){
-    let c = document.createElement("div");
-    c.innerText="💰";
-    c.style.position="absolute";
-    c.style.left=Math.random()*window.innerWidth+"px";
-    c.style.top="-20px";
-    c.style.animation="fall 2s linear";
-    document.body.appendChild(c);
-    setTimeout(()=>c.remove(),2000);
-  }
-}
-
-// WITHDRAW
-function withdraw(){
-  if(coins<1000) return alert("Minimum 1000 ❌");
-  alert("💸 Request sent");
-  coins=0;
-  save();
-  updateUI();
-}
-
-// SHARE
-function share(){
-  let link="https://t.me/tap2earn1995bot?start="+userId;
-  tg.openTelegramLink(link);
-}
-
-// LEADERBOARD (LOCAL DEMO)
-function showLeaderboard(){
-  let board = JSON.parse(localStorage.getItem("leaderboard")) || [];
-
-  board.push({id:userId,coins:coins});
-  board.sort((a,b)=>b.coins-a.coins);
-  board = board.slice(0,5);
-
-  localStorage.setItem("leaderboard", JSON.stringify(board));
-
-  let text="🏆 Top Players:\n";
-  board.forEach((u,i)=>{
-    text += (i+1)+". "+u.id+" - "+u.coins+"\n";
-  });
-
-  alert(text);
-}
-
 // INIT
 load();
+
 </script>
 
 </body>
-</html> 
+</html>
