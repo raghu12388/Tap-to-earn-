@@ -1,7 +1,7 @@
  <!DOCTYPE html>
 <html>
 <head>
-<title>Tap2Earn SECURE</title>
+<title>Tap2Earn FINAL FIXED</title>
 
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
@@ -11,8 +11,8 @@ body{
   margin:0;
   text-align:center;
   font-family:sans-serif;
-  color:white;
   background:#000;
+  color:white;
 }
 
 .btn{
@@ -21,23 +21,20 @@ body{
   background:#222;
   border:none;
   color:white;
+  border-radius:8px;
 }
 
 .tap{
-  width:150px;height:150px;
+  width:150px;
+  height:150px;
   border-radius:50%;
   background:#ff00cc;
   font-size:25px;
   border:none;
+  color:white;
 }
 
-#loginBox{
-  margin-top:50px;
-}
-
-#game{
-  display:none;
-}
+#game{display:none;}
 </style>
 </head>
 
@@ -48,29 +45,26 @@ body{
   <h2>🔐 Login</h2>
   <input id="email" placeholder="Email"><br><br>
   <input id="pass" type="password" placeholder="Password"><br><br>
-  <button class="btn" onclick="signup()">Sign Up</button>
-  <button class="btn" onclick="login()">Login</button>
+  <button class="btn" id="signupBtn">Sign Up</button>
+  <button class="btn" id="loginBtn">Login</button>
 </div>
 
 <!-- GAME -->
 <div id="game">
   <h1>💰 <span id="coins">0</span></h1>
 
-  <button class="tap" onclick="tap()">🚀</button><br>
+  <button class="tap" id="tapBtn">🚀</button><br>
 
-  <button class="btn" onclick="buyVIP()">💎 VIP</button>
-  <button class="btn" onclick="withdraw()">💸 Withdraw</button>
-  <button class="btn" onclick="adminCheck()">👑 Admin</button>
+  <button class="btn" id="vipBtn">💎 VIP</button>
+  <button class="btn" id="withdrawBtn">💸 Withdraw</button>
+  <button class="btn" id="adminBtn">👑 Admin</button>
 </div>
 
 <script type="module">
 
 // 🔥 FIREBASE
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { 
-  getFirestore, doc, setDoc, getDoc 
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
+import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import {
   getAuth, createUserWithEmailAndPassword,
   signInWithEmailAndPassword, onAuthStateChanged
@@ -87,95 +81,99 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 
 let userId;
-let coins=0;
-let isVIP=false;
-
-// LOGIN
-window.signup = ()=>{
-  let e=document.getElementById("email").value;
-  let p=document.getElementById("pass").value;
-
-  createUserWithEmailAndPassword(auth,e,p)
-  .then(()=>alert("Account Created"))
-}
-
-window.login = ()=>{
-  let e=document.getElementById("email").value;
-  let p=document.getElementById("pass").value;
-
-  signInWithEmailAndPassword(auth,e,p)
-}
-
-// SESSION
-onAuthStateChanged(auth, async(user)=>{
-  if(user){
-    userId=user.uid;
-
-    document.getElementById("loginBox").style.display="none";
-    document.getElementById("game").style.display="block";
-
-    let ref=doc(db,"users",userId);
-    let snap=await getDoc(ref);
-
-    if(snap.exists()){
-      coins=snap.data().coins||0;
-      isVIP=snap.data().isVIP||false;
-    }else{
-      await setDoc(ref,{coins:0,isVIP:false});
-    }
-
-    ui();
-  }
-});
+let coins = 0;
+let isVIP = false;
 
 // UI
-function ui(){
-  document.getElementById("coins").innerText=coins;
+function updateUI(){
+  document.getElementById("coins").innerText = coins;
 }
 
 // SAVE
 async function save(){
   await setDoc(doc(db,"users",userId),{
-    coins,isVIP
+    coins,
+    isVIP
   });
 }
 
-// TAP
-window.tap=()=>{
-  coins+=isVIP?2:1;
-  ui();
-  save();
-}
+// LOAD USER
+onAuthStateChanged(auth, async(user)=>{
+  if(user){
+    userId = user.uid;
 
-// VIP PAYMENT
-window.buyVIP=()=>{
+    document.getElementById("loginBox").style.display="none";
+    document.getElementById("game").style.display="block";
+
+    let ref = doc(db,"users",userId);
+    let snap = await getDoc(ref);
+
+    if(snap.exists()){
+      coins = snap.data().coins || 0;
+      isVIP = snap.data().isVIP || false;
+    } else {
+      await setDoc(ref,{coins:0,isVIP:false});
+    }
+
+    updateUI();
+  }
+});
+
+// BUTTON EVENTS (NO BUG VERSION)
+
+// SIGNUP
+document.getElementById("signupBtn").onclick = ()=>{
+  let e = document.getElementById("email").value;
+  let p = document.getElementById("pass").value;
+
+  createUserWithEmailAndPassword(auth,e,p)
+  .then(()=>alert("Account Created"));
+};
+
+// LOGIN
+document.getElementById("loginBtn").onclick = ()=>{
+  let e = document.getElementById("email").value;
+  let p = document.getElementById("pass").value;
+
+  signInWithEmailAndPassword(auth,e,p);
+};
+
+// TAP
+document.getElementById("tapBtn").onclick = ()=>{
+  coins += isVIP ? 2 : 1;
+  updateUI();
+  save();
+};
+
+// VIP
+document.getElementById("vipBtn").onclick = ()=>{
   let options={
     key:"YOUR_RAZORPAY_KEY",
     amount:9900,
     currency:"INR",
-    name:"VIP",
+    name:"VIP Upgrade",
     handler:function(){
-      isVIP=true;
+      isVIP = true;
       save();
-      alert("VIP Activated");
+      alert("VIP Activated 💎");
     }
   };
   new Razorpay(options).open();
-}
+};
 
 // WITHDRAW
-window.withdraw=()=>{
-  alert("Request sent (manual payout)");
-}
+document.getElementById("withdrawBtn").onclick = ()=>{
+  alert("Withdrawal request sent 💸");
+};
 
-// ADMIN SECURITY
-window.adminCheck=()=>{
-  if(userId==="YOUR_ADMIN_UID"){
+// ADMIN
+document.getElementById("adminBtn").onclick = ()=>{
+  if(userId === "YOUR_ADMIN_UID"){
     window.location.href="admin.html";
-  }else{
+  } else {
     alert("Access Denied ❌");
   }
-}
+};
 
 </script>
 
