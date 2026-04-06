@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
   <title>Tap2Earn ULTRA PRO</title>
@@ -9,8 +9,15 @@
       margin:0;
       text-align:center;
       font-family:sans-serif;
-      background: radial-gradient(circle,#0f0f0f,#000);
+      background:#000;
       color:white;
+      overflow:hidden;
+      animation: glowBg 5s infinite alternate;
+    }
+
+    @keyframes glowBg {
+      0% {background:#000;}
+      100% {background:#0a0a1a;}
     }
 
     h1 { margin-top:20px; }
@@ -24,12 +31,16 @@
       border-radius:50%;
       font-size:24px;
       background: linear-gradient(45deg,#ff00cc,#3333ff);
-      box-shadow:0 0 40px #ff00cc;
       border:none;
       color:white;
+      animation: pulse 1.5s infinite;
     }
 
-    .tap-btn:active { transform:scale(0.9); }
+    @keyframes pulse {
+      0% {box-shadow:0 0 10px #ff00cc;}
+      50% {box-shadow:0 0 40px #ff00cc;}
+      100% {box-shadow:0 0 10px #ff00cc;}
+    }
 
     .btn {
       margin:8px;
@@ -40,15 +51,27 @@
       color:white;
     }
 
-    .coin {
+    .explosion {
       position:absolute;
-      color:gold;
-      animation:float 1s linear forwards;
+      width:10px;
+      height:10px;
+      background:gold;
+      border-radius:50%;
+      animation:boom 0.8s forwards;
     }
 
-    @keyframes float {
-      from {transform:translateY(0);}
-      to {transform:translateY(-80px); opacity:0;}
+    @keyframes boom {
+      to {
+        transform: translate(var(--x), var(--y)) scale(0);
+        opacity:0;
+      }
+    }
+
+    @keyframes fall {
+      to {
+        transform: translateY(500px);
+        opacity:0;
+      }
     }
   </style>
 </head>
@@ -67,6 +90,7 @@
 <button class="btn" onclick="dailyBonus()">🎁 Bonus</button>
 <button class="btn" onclick="withdraw()">💸 Withdraw</button>
 <button class="btn" onclick="share()">📲 Invite</button>
+<button class="btn" onclick="showLeaderboard()">🏆 Leaderboard</button>
 
 <script>
 const tg = window.Telegram.WebApp;
@@ -74,34 +98,28 @@ tg.expand();
 
 let userId = tg.initDataUnsafe?.user?.id || "demo";
 
+// SOUND
+const tapSound = new Audio("https://www.soundjay.com/button/sounds/button-16.mp3");
+const winSound = new Audio("https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3");
+
 // DATA
 let coins = 0;
 let autoTap = 0;
 
 // LOAD
 function load() {
-  let data = JSON.parse(localStorage.getItem(userId)) || {
-    coins: 0,
-    autoTap: 0,
-    lastBonus: 0
-  };
-
-  coins = data.coins;
-  autoTap = data.autoTap;
-
+  let data = JSON.parse(localStorage.getItem(userId)) || {};
+  coins = parseInt(data.coins) || 0;
+  autoTap = parseInt(data.autoTap) || 0;
   updateUI();
 }
 
 // SAVE
 function save() {
-  localStorage.setItem(userId, JSON.stringify({
-    coins,
-    autoTap,
-    lastBonus: Date.now()
-  }));
+  localStorage.setItem(userId, JSON.stringify({coins, autoTap}));
 }
 
-// UI UPDATE
+// UI
 function updateUI() {
   document.getElementById("coins").innerText = coins;
   document.getElementById("level").innerText = Math.floor(coins/100)+1;
@@ -110,33 +128,30 @@ function updateUI() {
 // TAP
 function tap() {
   coins++;
+  tapSound.play();
 
-  let c = document.createElement("div");
-  c.innerText = "+1";
-  c.className = "coin";
-  c.style.left = Math.random()*window.innerWidth + "px";
-  c.style.top = "50%";
-  document.body.appendChild(c);
-
-  setTimeout(()=>c.remove(),1000);
-
-  if (navigator.vibrate) navigator.vibrate(20);
+  // explosion
+  for(let i=0;i<8;i++){
+    let e = document.createElement("div");
+    e.className = "explosion";
+    e.style.setProperty('--x',(Math.random()-0.5)*200+"px");
+    e.style.setProperty('--y',(Math.random()-0.5)*200+"px");
+    e.style.left = "50%";
+    e.style.top = "50%";
+    document.body.appendChild(e);
+    setTimeout(()=>e.remove(),800);
+  }
 
   updateUI();
   save();
-
-  if (Math.random() < 0.1) {
-    coins += 5;
-    alert("🔥 Bonus +5 coins!");
-  }
 }
 
-// AUTO TAP
+// AUTO
 function buyAuto() {
-  if (coins < 200) return alert("Need 200 coins ❌");
+  if(coins<200) return alert("Need 200 ❌");
   coins -= 200;
   autoTap++;
-  alert("⚡ Auto Tap Activated!");
+  alert("⚡ Auto Activated");
   save();
 }
 
@@ -147,54 +162,76 @@ setInterval(()=>{
   save();
 },1000);
 
-// DAILY BONUS
-function dailyBonus() {
-  let data = JSON.parse(localStorage.getItem(userId));
-
-  if (!data.lastBonus || Date.now() - data.lastBonus > 86400000) {
-    coins += 100;
-    alert("🎁 +100 Coins!");
-    save();
-    updateUI();
-  } else {
-    alert("Come tomorrow ❌");
-  }
+// BONUS
+function dailyBonus(){
+  coins += 100;
+  alert("🎁 +100 coins");
+  winSound.play();
+  updateUI();
+  save();
 }
 
 // SPIN
-function spin() {
+function spin(){
   let reward = Math.floor(Math.random()*200);
   coins += reward;
-  alert("🎡 You won " + reward);
-  save();
+  alert("🎡 Won "+reward);
+  winSound.play();
+  coinRain();
   updateUI();
+  save();
+}
+
+// COIN RAIN
+function coinRain(){
+  for(let i=0;i<15;i++){
+    let c = document.createElement("div");
+    c.innerText="💰";
+    c.style.position="absolute";
+    c.style.left=Math.random()*window.innerWidth+"px";
+    c.style.top="-20px";
+    c.style.animation="fall 2s linear";
+    document.body.appendChild(c);
+    setTimeout(()=>c.remove(),2000);
+  }
 }
 
 // WITHDRAW
-function withdraw() {
-  if (coins < 1000) return alert("Minimum 1000 coins ❌");
-  alert("💸 Withdrawal requested!");
-  coins = 0;
+function withdraw(){
+  if(coins<1000) return alert("Minimum 1000 ❌");
+  alert("💸 Request sent");
+  coins=0;
   save();
   updateUI();
 }
 
-// SHARE (VIRAL)
-function share() {
-  let link = "https://t.me/tap2earn1995bot?start=" + userId;
+// SHARE
+function share(){
+  let link="https://t.me/tap2earn1995bot?start="+userId;
   tg.openTelegramLink(link);
 }
 
-// FAKE LIVE ACTIVITY
-setInterval(()=>{
-  let names = ["Rahul","Aman","Priya","Rohit","Neha"];
-  let name = names[Math.floor(Math.random()*names.length)];
-  console.log(name + " earned ₹20 💸");
-},4000);
+// LEADERBOARD (LOCAL DEMO)
+function showLeaderboard(){
+  let board = JSON.parse(localStorage.getItem("leaderboard")) || [];
+
+  board.push({id:userId,coins:coins});
+  board.sort((a,b)=>b.coins-a.coins);
+  board = board.slice(0,5);
+
+  localStorage.setItem("leaderboard", JSON.stringify(board));
+
+  let text="🏆 Top Players:\n";
+  board.forEach((u,i)=>{
+    text += (i+1)+". "+u.id+" - "+u.coins+"\n";
+  });
+
+  alert(text);
+}
 
 // INIT
 load();
 </script>
 
 </body>
-</html>
+</html> 
