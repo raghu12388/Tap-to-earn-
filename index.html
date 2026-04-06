@@ -1,12 +1,10 @@
  <!DOCTYPE html>
 <html>
 <head>
-<title>Tap2Earn ULTRA</title>
+<title>Tap2Earn FINAL PRO</title>
 
-<!-- ICONS -->
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
 
-<!-- FIREBASE -->
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
@@ -20,6 +18,15 @@ body{
   padding-bottom:100px;
 }
 
+/* LAYOUT */
+.container{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:15px;
+  padding-top:20px;
+}
+
 /* TAP */
 .tap{
   width:180px;height:180px;
@@ -29,6 +36,15 @@ body{
   color:white;
   font-size:30px;
   box-shadow:0 0 40px #ff00cc;
+  margin:20px auto;
+}
+
+/* WHEEL */
+#wheel{
+  display:block;
+  margin:auto;
+  border-radius:50%;
+  border:5px solid #333;
 }
 
 /* REWARD */
@@ -59,7 +75,6 @@ body{
   padding:10px 20px;
   border-radius:10px;
   opacity:0;
-  transition:0.4s;
 }
 #toast.show{opacity:1;}
 
@@ -68,7 +83,6 @@ body{
   width:80%;
   height:8px;
   background:#222;
-  margin:10px auto;
   border-radius:10px;
 }
 #progressBar{
@@ -98,7 +112,9 @@ body{
   background:none;
   border:none;
 }
+
 .nav-btn i{font-size:20px;}
+
 .nav-btn.active{
   color:#ff00cc;
   text-shadow:0 0 10px #ff00cc;
@@ -112,19 +128,20 @@ body{
 <div id="reward"></div>
 <div id="toast"></div>
 
-<h1>💰 <span id="coins">0</span></h1>
-<h3>Level: <span id="level">1</span></h3>
+<div class="container">
 
-<h4 id="timerText">Chest Ready 🎁</h4>
-<div class="progress"><div id="progressBar"></div></div>
+  <h1>💰 <span id="coins">0</span></h1>
+  <h3>Level: <span id="level">1</span></h3>
 
-<br>
+  <h4 id="timerText">Chest Ready 🎁</h4>
+  <div class="progress"><div id="progressBar"></div></div>
 
-<button class="tap" id="tapBtn">🚀</button>
+  <button class="tap" id="tapBtn">🚀</button>
 
-<!-- SPIN -->
-<canvas id="wheel" width="260" height="260"></canvas><br>
-<button onclick="spin()">🎰 Spin</button>
+  <canvas id="wheel" width="260" height="260"></canvas>
+  <button onclick="spin()">🎰 Spin</button>
+
+</div>
 
 <!-- FOOTER -->
 <div class="footer">
@@ -150,7 +167,7 @@ const db = firebase.firestore();
 
 // USER
 let userId = localStorage.getItem("userId") || ("user_"+Math.random());
-localStorage.setItem("userId",userId);
+localStorage.setItem("userId", userId);
 
 // DATA
 let coins=0, auto=0, isVIP=false, lastChest=0;
@@ -203,7 +220,7 @@ tapBtn.onclick=()=>{
   ui(); save();
 };
 
-// AUTO
+// AUTO LOOP
 setInterval(()=>{
   coins+=auto*(isVIP?2:1);
   ui();
@@ -252,21 +269,21 @@ function withdraw(){
   coins=0; save(); showToast("Sent 💸");
 }
 
-// LEADER
+// LEADERBOARD
 async function leader(){
   let snap=await db.collection("users").orderBy("coins","desc").limit(5).get();
   let t="🏆\n"; snap.forEach(d=>t+=d.data().coins+"\n");
   alert(t);
 }
 
-// REF
+// REFERRAL
 function invite(){
   let link=location.href+"?ref="+userId;
   navigator.clipboard.writeText(link);
   showToast("Copied 📲");
 }
 
-// FOOTER TAB
+// TAB
 function tab(el){
   document.querySelectorAll(".nav-btn").forEach(b=>b.classList.remove("active"));
   el.classList.add("active");
