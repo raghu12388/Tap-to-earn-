@@ -1,7 +1,7 @@
  <!DOCTYPE html>
 <html>
 <head>
-  <title>Tap2Earn ULTRA</title>
+  <title>Tap2Earn ULTRA PRO</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
   <style>
@@ -11,42 +11,31 @@
       font-family:sans-serif;
       background: radial-gradient(circle,#0f0f0f,#000);
       color:white;
-      overflow:hidden;
     }
 
-    h1 {
-      margin-top:20px;
-      font-size:30px;
-    }
+    h1 { margin-top:20px; }
 
-    .level {
-      color:#00ffcc;
-      font-size:18px;
-    }
+    .level { color:#00ffcc; }
 
     .tap-btn {
       margin-top:40px;
       width:160px;
       height:160px;
       border-radius:50%;
-      font-size:26px;
+      font-size:24px;
       background: linear-gradient(45deg,#ff00cc,#3333ff);
-      box-shadow:0 0 50px #ff00cc;
+      box-shadow:0 0 40px #ff00cc;
       border:none;
       color:white;
-      transition:0.1s;
     }
 
-    .tap-btn:active {
-      transform:scale(0.9);
-    }
+    .tap-btn:active { transform:scale(0.9); }
 
     .btn {
-      margin:10px;
-      padding:12px 20px;
+      margin:8px;
+      padding:10px 18px;
       border:none;
-      border-radius:10px;
-      font-size:16px;
+      border-radius:8px;
       background:#222;
       color:white;
     }
@@ -54,12 +43,11 @@
     .coin {
       position:absolute;
       color:gold;
-      font-size:20px;
       animation:float 1s linear forwards;
     }
 
     @keyframes float {
-      from {transform:translateY(0); opacity:1;}
+      from {transform:translateY(0);}
       to {transform:translateY(-80px); opacity:0;}
     }
   </style>
@@ -73,7 +61,11 @@
 <button class="tap-btn" onclick="tap()">🚀</button>
 
 <br>
+
 <button class="btn" onclick="spin()">🎡 Spin</button>
+<button class="btn" onclick="buyAuto()">⚡ Auto</button>
+<button class="btn" onclick="dailyBonus()">🎁 Bonus</button>
+<button class="btn" onclick="withdraw()">💸 Withdraw</button>
 <button class="btn" onclick="share()">📲 Invite</button>
 
 <script>
@@ -82,21 +74,34 @@ tg.expand();
 
 let userId = tg.initDataUnsafe?.user?.id || "demo";
 
+// DATA
 let coins = 0;
+let autoTap = 0;
 
 // LOAD
 function load() {
-  let saved = localStorage.getItem(userId);
-  if (saved) coins = parseInt(saved);
+  let data = JSON.parse(localStorage.getItem(userId)) || {
+    coins: 0,
+    autoTap: 0,
+    lastBonus: 0
+  };
+
+  coins = data.coins;
+  autoTap = data.autoTap;
+
   updateUI();
 }
 
 // SAVE
 function save() {
-  localStorage.setItem(userId, coins);
+  localStorage.setItem(userId, JSON.stringify({
+    coins,
+    autoTap,
+    lastBonus: Date.now()
+  }));
 }
 
-// UPDATE UI
+// UI UPDATE
 function updateUI() {
   document.getElementById("coins").innerText = coins;
   document.getElementById("level").innerText = Math.floor(coins/100)+1;
@@ -106,7 +111,6 @@ function updateUI() {
 function tap() {
   coins++;
 
-  // floating coin animation
   let c = document.createElement("div");
   c.innerText = "+1";
   c.className = "coin";
@@ -116,15 +120,44 @@ function tap() {
 
   setTimeout(()=>c.remove(),1000);
 
-  // vibration
-  if (navigator.vibrate) navigator.vibrate(30);
+  if (navigator.vibrate) navigator.vibrate(20);
 
   updateUI();
   save();
 
-  // random reward popup
   if (Math.random() < 0.1) {
-    showPopup("🔥 Lucky bonus!");
+    coins += 5;
+    alert("🔥 Bonus +5 coins!");
+  }
+}
+
+// AUTO TAP
+function buyAuto() {
+  if (coins < 200) return alert("Need 200 coins ❌");
+  coins -= 200;
+  autoTap++;
+  alert("⚡ Auto Tap Activated!");
+  save();
+}
+
+// AUTO LOOP
+setInterval(()=>{
+  coins += autoTap;
+  updateUI();
+  save();
+},1000);
+
+// DAILY BONUS
+function dailyBonus() {
+  let data = JSON.parse(localStorage.getItem(userId));
+
+  if (!data.lastBonus || Date.now() - data.lastBonus > 86400000) {
+    coins += 100;
+    alert("🎁 +100 Coins!");
+    save();
+    updateUI();
+  } else {
+    alert("Come tomorrow ❌");
   }
 }
 
@@ -132,25 +165,29 @@ function tap() {
 function spin() {
   let reward = Math.floor(Math.random()*200);
   coins += reward;
-  showPopup("🎡 You won " + reward + " coins!");
-  updateUI();
+  alert("🎡 You won " + reward);
   save();
+  updateUI();
 }
 
-// SHARE (VERY IMPORTANT 🔥)
+// WITHDRAW
+function withdraw() {
+  if (coins < 1000) return alert("Minimum 1000 coins ❌");
+  alert("💸 Withdrawal requested!");
+  coins = 0;
+  save();
+  updateUI();
+}
+
+// SHARE (VIRAL)
 function share() {
   let link = "https://t.me/tap2earn1995bot?start=" + userId;
   tg.openTelegramLink(link);
 }
 
-// POPUP
-function showPopup(msg) {
-  alert(msg);
-}
-
-// FAKE LIVE ACTIVITY (VIRAL PSYCHOLOGY)
+// FAKE LIVE ACTIVITY
 setInterval(()=>{
-  let names = ["Rahul","Aman","Priya","Rohit","Neha","Karan"];
+  let names = ["Rahul","Aman","Priya","Rohit","Neha"];
   let name = names[Math.floor(Math.random()*names.length)];
   console.log(name + " earned ₹20 💸");
 },4000);
