@@ -1,7 +1,7 @@
  <!DOCTYPE html>
 <html>
 <head>
-<title>Tap2Earn FINAL PRO</title>
+<title>Tap2Earn Spin PRO</title>
 
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
 
@@ -29,40 +29,45 @@ body{
 
 /* TAP */
 .tap{
-  width:180px;height:180px;
+  width:170px;height:170px;
   border-radius:50%;
   background:radial-gradient(circle,#ff00cc,#330066);
   border:none;
   color:white;
-  font-size:30px;
+  font-size:28px;
   box-shadow:0 0 40px #ff00cc;
-  margin:20px auto;
+}
+
+/* SPIN BOX */
+.spin-box{
+  position:relative;
+}
+
+/* POINTER */
+.pointer{
+  position:absolute;
+  top:-10px;
+  left:50%;
+  transform:translateX(-50%);
+  font-size:22px;
 }
 
 /* WHEEL */
 #wheel{
-  display:block;
-  margin:auto;
   border-radius:50%;
   border:5px solid #333;
+  box-shadow:0 0 20px #ff00cc;
 }
 
-/* REWARD */
-#reward{
-  position:absolute;
-  left:50%;
-  top:50%;
-  transform:translate(-50%,-50%);
-  font-size:28px;
-  opacity:0;
-}
-.show{
-  animation:pop 1s forwards;
-}
-@keyframes pop{
-  0%{opacity:0;}
-  50%{opacity:1;}
-  100%{opacity:0; transform:translate(-50%,-100px);}
+/* BUTTON */
+.spin-btn{
+  margin-top:15px;
+  padding:10px 25px;
+  border:none;
+  border-radius:10px;
+  background:linear-gradient(90deg,#ff00cc,#00ffee);
+  color:white;
+  font-size:16px;
 }
 
 /* TOAST */
@@ -77,19 +82,6 @@ body{
   opacity:0;
 }
 #toast.show{opacity:1;}
-
-/* PROGRESS */
-.progress{
-  width:80%;
-  height:8px;
-  background:#222;
-  border-radius:10px;
-}
-#progressBar{
-  height:100%;
-  width:0%;
-  background:linear-gradient(90deg,#ff00cc,#00ffee);
-}
 
 /* FOOTER */
 .footer{
@@ -109,15 +101,12 @@ body{
   align-items:center;
   font-size:11px;
   color:#aaa;
-  background:none;
   border:none;
+  background:none;
 }
-
-.nav-btn i{font-size:20px;}
 
 .nav-btn.active{
   color:#ff00cc;
-  text-shadow:0 0 10px #ff00cc;
   transform:scale(1.1);
 }
 </style>
@@ -125,59 +114,54 @@ body{
 
 <body>
 
-<div id="reward"></div>
 <div id="toast"></div>
 
 <div class="container">
 
-  <h1>💰 <span id="coins">0</span></h1>
-  <h3>Level: <span id="level">1</span></h3>
+<h1>💰 <span id="coins">0</span></h1>
 
-  <h4 id="timerText">Chest Ready 🎁</h4>
-  <div class="progress"><div id="progressBar"></div></div>
+<button class="tap" id="tapBtn">🚀</button>
 
-  <button class="tap" id="tapBtn">🚀</button>
+<div class="spin-box">
+
+  <div class="pointer">▼</div>
 
   <canvas id="wheel" width="260" height="260"></canvas>
-  <button onclick="spin()">🎰 Spin</button>
+
+  <button class="spin-btn" id="spinBtn">🎰 SPIN</button>
+
+</div>
 
 </div>
 
 <!-- FOOTER -->
 <div class="footer">
-  <button class="nav-btn active" onclick="tab(this)"><i class="fas fa-home"></i>Home</button>
-  <button class="nav-btn" onclick="vip()"><i class="fas fa-gem"></i>VIP</button>
-  <button class="nav-btn" onclick="autoBuy()"><i class="fas fa-robot"></i>Auto</button>
-  <button class="nav-btn" onclick="chest()"><i class="fas fa-gift"></i>Chest</button>
-  <button class="nav-btn" onclick="withdraw()"><i class="fas fa-wallet"></i>Cash</button>
-  <button class="nav-btn" onclick="leader()"><i class="fas fa-trophy"></i>Rank</button>
-  <button class="nav-btn" onclick="invite()"><i class="fas fa-user-plus"></i>Invite</button>
+  <button class="nav-btn active">Home</button>
+  <button class="nav-btn">VIP</button>
+  <button class="nav-btn">Auto</button>
+  <button class="nav-btn">Chest</button>
 </div>
 
 <script>
 
-// FIREBASE CONFIG
-const firebaseConfig = {
+// FIREBASE
+firebase.initializeApp({
   apiKey:"YOUR_KEY",
   authDomain:"YOUR_DOMAIN",
   projectId:"YOUR_PROJECT_ID"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
+});
+const db=firebase.firestore();
 
 // USER
-let userId = localStorage.getItem("userId") || ("user_"+Math.random());
-localStorage.setItem("userId", userId);
+let userId=localStorage.getItem("userId")||("user_"+Math.random());
+localStorage.setItem("userId",userId);
 
 // DATA
-let coins=0, auto=0, isVIP=false, lastChest=0;
-let lastSpin=0, spinning=false;
-let ctx=document.getElementById("wheel").getContext("2d");
+let coins=0, auto=0;
 
 // UI
 function ui(){
   document.getElementById("coins").innerText=coins;
-  document.getElementById("level").innerText=Math.floor(coins/200)+1;
 }
 
 // TOAST
@@ -188,176 +172,118 @@ function showToast(msg){
   setTimeout(()=>t.classList.remove("show"),2000);
 }
 
-// REWARD
-function reward(x){
-  let el=document.getElementById("reward");
-  el.innerText="+"+x;
-  el.classList.add("show");
-  setTimeout(()=>el.classList.remove("show"),1000);
-}
-
 // SAVE
 function save(){
-  db.collection("users").doc(userId).set({coins,auto,isVIP});
-}
-
-// LOAD
-async function load(){
-  let d=await db.collection("users").doc(userId).get();
-  if(d.exists){
-    coins=d.data().coins||0;
-    auto=d.data().auto||0;
-    isVIP=d.data().isVIP||false;
-  }
-  ui();
+  db.collection("users").doc(userId).set({coins});
 }
 
 // TAP
 tapBtn.onclick=()=>{
-  let gain=isVIP?2:1;
-  coins+=gain;
-  reward(gain);
-  ui(); save();
+  coins++;
+  ui();
+  save();
 };
 
-// AUTO LOOP
-setInterval(()=>{
-  coins+=auto*(isVIP?2:1);
-  ui();
-},1000);
+// 🎰 SPIN SYSTEM
+const canvas=document.getElementById("wheel");
+const ctx=canvas.getContext("2d");
+const spinBtn=document.getElementById("spinBtn");
 
-// VIP
-function vip(){
-  if(coins<500) return showToast("Need 500");
-  coins-=500; isVIP=true; save();
-}
+let spinning=false, lastSpin=0, angle=0;
 
-// AUTO BUY
-function autoBuy(){
-  if(coins<300) return showToast("Need 300");
-  coins-=300; auto++; save();
-}
+const rewards=[50,100,150,300,500,1000];
 
-// CHEST
-function chest(){
-  if(Date.now()-lastChest<60000) return showToast("⏳ Wait");
-  let r=Math.floor(Math.random()*300)+50;
-  coins+=r; lastChest=Date.now();
-  reward(r); save();
-}
+// DRAW
+function draw(){
+  let arc=(2*Math.PI)/rewards.length;
 
-// TIMER
-setInterval(()=>{
-  let diff=Date.now()-lastChest;
-  let total=60000;
-
-  if(diff>=total){
-    timerText.innerText="Chest Ready 🎁";
-    progressBar.style.width="100%";
-  }else{
-    let left=Math.floor((total-diff)/1000);
-    timerText.innerText="⏳ "+left+"s";
-    progressBar.style.width=(diff/total*100)+"%";
-  }
-},500);
-
-// WITHDRAW
-function withdraw(){
-  let amt=coins/100;
-  if(amt<10) return showToast("Min ₹10");
-  db.collection("withdraws").add({userId,amt});
-  coins=0; save(); showToast("Sent 💸");
-}
-
-// LEADERBOARD
-async function leader(){
-  let snap=await db.collection("users").orderBy("coins","desc").limit(5).get();
-  let t="🏆\n"; snap.forEach(d=>t+=d.data().coins+"\n");
-  alert(t);
-}
-
-// REFERRAL
-function invite(){
-  let link=location.href+"?ref="+userId;
-  navigator.clipboard.writeText(link);
-  showToast("Copied 📲");
-}
-
-// TAB
-function tab(el){
-  document.querySelectorAll(".nav-btn").forEach(b=>b.classList.remove("active"));
-  el.classList.add("active");
-}
-
-// 🎰 JACKPOT SPIN
-let rewards=[
-  {v:50,c:40},{v:100,c:25},{v:150,c:15},
-  {v:300,c:10},{v:500,c:7},{v:1000,c:3}
-];
-
-function getReward(){
-  let r=Math.random()*100,s=0;
-  for(let i of rewards){ s+=i.c; if(r<=s)return i.v;}
-}
-
-function drawWheel(){
-  let arc=2*Math.PI/rewards.length;
   for(let i=0;i<rewards.length;i++){
     ctx.beginPath();
-    ctx.fillStyle=rewards[i].v==1000?"gold":(i%2?"#ff00cc":"#330066");
+    ctx.fillStyle=rewards[i]==1000?"gold":(i%2?"#ff00cc":"#330066");
     ctx.moveTo(130,130);
     ctx.arc(130,130,130,i*arc,(i+1)*arc);
     ctx.fill();
+
+    ctx.save();
+    ctx.translate(130,130);
+    ctx.rotate(i*arc+arc/2);
     ctx.fillStyle="#fff";
-    ctx.fillText(rewards[i].v,110,70);
+    ctx.fillText(rewards[i],60,5);
+    ctx.restore();
   }
 }
-drawWheel();
 
-function spin(){
+// ROTATE
+function rotate(a){
+  ctx.clearRect(0,0,260,260);
+  ctx.save();
+  ctx.translate(130,130);
+  ctx.rotate(a);
+  ctx.translate(-130,-130);
+  draw();
+  ctx.restore();
+}
+
+// SPIN BUTTON
+spinBtn.onclick=()=>{
+
   if(spinning) return;
-  if(Date.now()-lastSpin<60000) return showToast("⏳ Wait spin");
+
+  if(Date.now()-lastSpin<60000){
+    showToast("⏳ Wait");
+    return;
+  }
 
   spinning=true;
-  let spinAngle=Math.random()*2000+2000;
+
+  let spinTime=3000;
   let start=null;
+  let extra=Math.random()*Math.PI*6+Math.PI*4;
+  let target=angle+extra;
 
   function anim(t){
     if(!start) start=t;
-    let p=t-start;
 
-    ctx.clearRect(0,0,260,260);
-    ctx.save();
-    ctx.translate(130,130);
-    ctx.rotate((spinAngle*(1-p/3000))*Math.PI/180);
-    ctx.translate(-130,-130);
-    drawWheel();
-    ctx.restore();
+    let p=(t-start)/spinTime;
+    if(p>1)p=1;
 
-    if(p<3000) requestAnimationFrame(anim);
-    else finishSpin();
+    let ease=1-Math.pow(1-p,3);
+    let current=angle+(target-angle)*ease;
+
+    rotate(current);
+
+    if(p<1){
+      requestAnimationFrame(anim);
+    }else{
+      angle=target%(Math.PI*2);
+      finish();
+    }
   }
-  requestAnimationFrame(anim);
-}
 
-function finishSpin(){
+  requestAnimationFrame(anim);
+};
+
+// RESULT
+function finish(){
   spinning=false;
   lastSpin=Date.now();
 
-  let win=getReward();
-  coins+=win; save();
+  let win=rewards[Math.floor(Math.random()*rewards.length)];
+  coins+=win;
+  save();
+  ui();
 
   if(win==1000){
-    document.body.style.background="gold";
     showToast("💎 JACKPOT!");
-    setTimeout(()=>document.body.style.background="black",2000);
+    document.body.style.background="gold";
+    setTimeout(()=>document.body.style.background="black",1500);
+  }else{
+    showToast("🎉 "+win);
   }
-
-  reward(win);
 }
 
 // INIT
-load();
+draw();
 
 </script>
 
