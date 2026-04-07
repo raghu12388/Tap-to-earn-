@@ -1,31 +1,23 @@
  <!DOCTYPE html>
 <html>
 <head>
-<title>Tap2Earn Spin PRO</title>
+<title>Tap2Earn PRO APP</title>
 
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
-
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
 <style>
 body{
   margin:0;
   background:black;
   color:white;
-  text-align:center;
   font-family:sans-serif;
-  padding-bottom:100px;
+  text-align:center;
+  padding-bottom:90px;
 }
 
-/* LAYOUT */
-.container{
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  gap:15px;
-  padding-top:20px;
-}
+/* PAGES */
+.page{display:none;padding-top:20px;}
+.activePage{display:block;}
 
 /* TAP */
 .tap{
@@ -38,18 +30,13 @@ body{
   box-shadow:0 0 40px #ff00cc;
 }
 
-/* SPIN BOX */
-.spin-box{
-  position:relative;
-}
-
-/* POINTER */
+/* SPIN */
+.spin-box{position:relative;margin-top:20px;}
 .pointer{
   position:absolute;
   top:-10px;
   left:50%;
   transform:translateX(-50%);
-  font-size:22px;
 }
 
 /* WHEEL */
@@ -60,28 +47,22 @@ body{
 }
 
 /* BUTTON */
-.spin-btn{
-  margin-top:15px;
-  padding:10px 25px;
+.btn{
+  margin-top:10px;
+  padding:10px 20px;
   border:none;
   border-radius:10px;
   background:linear-gradient(90deg,#ff00cc,#00ffee);
   color:white;
-  font-size:16px;
 }
 
-/* TOAST */
-#toast{
-  position:fixed;
-  bottom:110px;
-  left:50%;
-  transform:translateX(-50%);
-  background:#222;
-  padding:10px 20px;
+/* WALLET */
+.wallet-box{
+  background:#111;
+  margin:20px;
+  padding:20px;
   border-radius:10px;
-  opacity:0;
 }
-#toast.show{opacity:1;}
 
 /* FOOTER */
 .footer{
@@ -99,7 +80,6 @@ body{
   display:flex;
   flex-direction:column;
   align-items:center;
-  font-size:11px;
   color:#aaa;
   border:none;
   background:none;
@@ -114,87 +94,91 @@ body{
 
 <body>
 
-<div id="toast"></div>
-
-<div class="container">
-
-<h1>💰 <span id="coins">0</span></h1>
-
-<button class="tap" id="tapBtn">🚀</button>
-
-<div class="spin-box">
-
-  <div class="pointer">▼</div>
-
-  <canvas id="wheel" width="260" height="260"></canvas>
-
-  <button class="spin-btn" id="spinBtn">🎰 SPIN</button>
-
+<!-- HOME -->
+<div id="home" class="page activePage">
+  <h1>💰 <span id="coins">0</span></h1>
+  <h3>Level: <span id="level">1</span></h3>
+  <button class="tap" id="tapBtn">🚀</button>
 </div>
 
+<!-- SPIN -->
+<div id="spinPage" class="page">
+  <h2>🎰 Spin</h2>
+
+  <div class="spin-box">
+    <div class="pointer">▼</div>
+    <canvas id="wheel" width="260" height="260"></canvas>
+    <br>
+    <button class="btn" id="spinBtn">🎰 SPIN</button>
+  </div>
+</div>
+
+<!-- WALLET -->
+<div id="walletPage" class="page">
+  <h2>💰 Wallet</h2>
+
+  <div class="wallet-box">
+    <h3>Balance: ₹ <span id="balance">0</span></h3>
+    <button class="btn" onclick="withdraw()">💸 Withdraw</button>
+  </div>
 </div>
 
 <!-- FOOTER -->
 <div class="footer">
-  <button class="nav-btn active">Home</button>
-  <button class="nav-btn">VIP</button>
-  <button class="nav-btn">Auto</button>
-  <button class="nav-btn">Chest</button>
+
+  <button class="nav-btn active" onclick="showPage('home',this)">
+    <i class="fas fa-home"></i>
+    Home
+  </button>
+
+  <button class="nav-btn" onclick="showPage('spinPage',this)">
+    <i class="fas fa-dice"></i>
+    Spin
+  </button>
+
+  <button class="nav-btn" onclick="showPage('walletPage',this)">
+    <i class="fas fa-wallet"></i>
+    Wallet
+  </button>
+
 </div>
 
 <script>
 
-// FIREBASE
-firebase.initializeApp({
-  apiKey:"YOUR_KEY",
-  authDomain:"YOUR_DOMAIN",
-  projectId:"YOUR_PROJECT_ID"
-});
-const db=firebase.firestore();
-
-// USER
-let userId=localStorage.getItem("userId")||("user_"+Math.random());
-localStorage.setItem("userId",userId);
-
 // DATA
-let coins=0, auto=0;
+let coins = 0;
 
 // UI
-function ui(){
-  document.getElementById("coins").innerText=coins;
-}
-
-// TOAST
-function showToast(msg){
-  let t=document.getElementById("toast");
-  t.innerText=msg;
-  t.classList.add("show");
-  setTimeout(()=>t.classList.remove("show"),2000);
-}
-
-// SAVE
-function save(){
-  db.collection("users").doc(userId).set({coins});
+function updateUI(){
+  document.getElementById("coins").innerText = coins;
+  document.getElementById("level").innerText = Math.floor(coins/100)+1;
+  document.getElementById("balance").innerText = (coins/100).toFixed(2);
 }
 
 // TAP
-tapBtn.onclick=()=>{
+tapBtn.onclick = ()=>{
   coins++;
-  ui();
-  save();
+  updateUI();
 };
 
-// 🎰 SPIN SYSTEM
-const canvas=document.getElementById("wheel");
-const ctx=canvas.getContext("2d");
-const spinBtn=document.getElementById("spinBtn");
+// PAGE SWITCH
+function showPage(id, btn){
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("activePage"));
+  document.getElementById(id).classList.add("activePage");
 
-let spinning=false, lastSpin=0, angle=0;
+  document.querySelectorAll(".nav-btn").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+}
+
+// 🎰 SPIN
+const canvas = document.getElementById("wheel");
+const ctx = canvas.getContext("2d");
+
+let spinning=false, angle=0;
 
 const rewards=[50,100,150,300,500,1000];
 
-// DRAW
-function draw(){
+function drawWheel(){
   let arc=(2*Math.PI)/rewards.length;
 
   for(let i=0;i<rewards.length;i++){
@@ -213,48 +197,37 @@ function draw(){
   }
 }
 
-// ROTATE
 function rotate(a){
   ctx.clearRect(0,0,260,260);
   ctx.save();
   ctx.translate(130,130);
   ctx.rotate(a);
   ctx.translate(-130,-130);
-  draw();
+  drawWheel();
   ctx.restore();
 }
 
-// SPIN BUTTON
-spinBtn.onclick=()=>{
-
+spinBtn.onclick = ()=>{
   if(spinning) return;
-
-  if(Date.now()-lastSpin<60000){
-    showToast("⏳ Wait");
-    return;
-  }
 
   spinning=true;
 
-  let spinTime=3000;
+  let target=angle+Math.random()*Math.PI*6+Math.PI*4;
   let start=null;
-  let extra=Math.random()*Math.PI*6+Math.PI*4;
-  let target=angle+extra;
 
   function anim(t){
     if(!start) start=t;
 
-    let p=(t-start)/spinTime;
+    let p=(t-start)/3000;
     if(p>1)p=1;
 
-    let ease=1-Math.pow(1-p,3);
-    let current=angle+(target-angle)*ease;
+    let current=angle+(target-angle)*p;
 
     rotate(current);
 
     if(p<1){
       requestAnimationFrame(anim);
-    }else{
+    } else {
       angle=target%(Math.PI*2);
       finish();
     }
@@ -263,27 +236,34 @@ spinBtn.onclick=()=>{
   requestAnimationFrame(anim);
 };
 
-// RESULT
 function finish(){
   spinning=false;
-  lastSpin=Date.now();
 
   let win=rewards[Math.floor(Math.random()*rewards.length)];
   coins+=win;
-  save();
-  ui();
+  updateUI();
 
-  if(win==1000){
-    showToast("💎 JACKPOT!");
-    document.body.style.background="gold";
-    setTimeout(()=>document.body.style.background="black",1500);
-  }else{
-    showToast("🎉 "+win);
+  alert("🎉 Won "+win);
+}
+
+// WITHDRAW
+function withdraw(){
+  let amount = coins/100;
+
+  if(amount < 10){
+    alert("Minimum ₹10 required");
+    return;
   }
+
+  coins = 0;
+  updateUI();
+
+  alert("Withdraw request sent 💸");
 }
 
 // INIT
-draw();
+drawWheel();
+updateUI();
 
 </script>
 
