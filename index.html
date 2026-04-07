@@ -1,7 +1,7 @@
  <!DOCTYPE html>
 <html>
 <head>
-<title>Tap2Earn MONEY MACHINE</title>
+<title>Tap2Earn PRO</title>
 
 <style>
 body{
@@ -13,7 +13,7 @@ body{
   padding-bottom:80px;
 }
 
-.page{display:none;padding-top:20px;}
+.page{display:none;}
 .activePage{display:block;}
 
 .tap{
@@ -46,12 +46,21 @@ body{
 }
 
 .nav-btn{
+  color:#aaa;
   background:none;
   border:none;
-  color:#aaa;
 }
 .nav-btn.active{
   color:#ff00cc;
+}
+
+/* POINTER */
+.pointer{
+  position:absolute;
+  top:10px;
+  left:50%;
+  transform:translateX(-50%);
+  font-size:30px;
 }
 </style>
 </head>
@@ -62,47 +71,37 @@ body{
 <div id="home" class="page activePage">
   <h1>💰 <span id="coins">0</span></h1>
   <button class="tap" id="tapBtn">🚀</button><br><br>
-
-  <button class="btn" onclick="watchAd()">🎁 Watch Ad & Earn</button>
+  <button class="btn" onclick="watchAd()">🎁 Watch Ad</button>
 </div>
 
 <!-- SPIN -->
 <div id="spinPage" class="page">
-  <canvas id="wheel" width="260" height="260"></canvas><br>
+  <div style="position:relative">
+    <div class="pointer">🔻</div>
+    <canvas id="wheel" width="260" height="260"></canvas>
+  </div>
+  <br>
   <button class="btn" id="spinBtn">🎰 SPIN</button>
-</div>
-
-<!-- WALLET -->
-<div id="walletPage" class="page">
-  <h2>Balance ₹ <span id="balance">0</span></h2>
-  <button class="btn" onclick="withdraw()">Withdraw</button>
-
-  <br><br>
-
-  <h3>Invite & Earn</h3>
-  <button class="btn" onclick="copyInvite()">Copy Link</button>
 </div>
 
 <!-- FOOTER -->
 <div class="footer">
   <button class="nav-btn active" onclick="nav('home',this)">Home</button>
   <button class="nav-btn" onclick="nav('spinPage',this)">Spin</button>
-  <button class="nav-btn" onclick="nav('walletPage',this)">Wallet</button>
 </div>
 
 <script>
-window.onload = function(){
+window.onload=function(){
 
-let coins = 0;
+let coins=0;
 
-// ===== UI =====
+// UI
 function updateUI(){
-  document.getElementById("coins").innerText = coins;
-  document.getElementById("balance").innerText = (coins/100).toFixed(2);
+  document.getElementById("coins").innerText=coins;
 }
 
-// ===== NAV =====
-window.nav = function(id,btn){
+// NAV
+window.nav=function(id,btn){
   document.querySelectorAll(".page").forEach(p=>p.classList.remove("activePage"));
   document.getElementById(id).classList.add("activePage");
 
@@ -110,110 +109,132 @@ window.nav = function(id,btn){
   btn.classList.add("active");
 }
 
-// ===== TAP =====
-document.getElementById("tapBtn").onclick = function(){
+// TAP
+document.getElementById("tapBtn").onclick=()=>{
   coins++;
   updateUI();
 }
 
-// ===== ADS (TELEGRAM SAFE) =====
-const AD_LINK = "https://www.profitableratecpm.com/xxxxx";
+// ===== ADS =====
+const AD_LINK="https://www.profitableratecpm.com/xxxxx";
 
 function openAd(){
   if(window.Telegram && Telegram.WebApp){
     Telegram.WebApp.openLink(AD_LINK);
   } else {
-    window.location.href = AD_LINK;
+    window.location.href=AD_LINK;
   }
 }
 
-window.watchAd = function(){
+window.watchAd=function(){
   openAd();
-
   setTimeout(()=>{
-    coins += 200;
+    coins+=200;
     updateUI();
-    alert("🎁 +200 Coins");
+    alert("🎁 +200");
   },4000);
 }
 
-// ===== SPIN =====
-const ctx = document.getElementById("wheel").getContext("2d");
-let spinning=false, angle=0;
-const rewards=[50,100,150,300,500,1000];
+// ===== SOUND =====
+const tickSound=new Audio("https://actions.google.com/sounds/v1/foley/click.ogg");
+const winSound=new Audio("https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg");
 
-function draw(){
-  let arc=(2*Math.PI)/rewards.length;
+// ===== SPIN =====
+const ctx=document.getElementById("wheel").getContext("2d");
+
+let spinning=false;
+let angle=0;
+
+const rewards=[50,100,150,300,500,1000];
+const arc=(2*Math.PI)/rewards.length;
+
+function draw(highlightIndex=-1){
   for(let i=0;i<rewards.length;i++){
+
     ctx.beginPath();
-    ctx.fillStyle=i%2?"#ff00cc":"#330066";
+    ctx.fillStyle=i==highlightIndex?"gold":(i%2?"#ff00cc":"#330066");
     ctx.moveTo(130,130);
     ctx.arc(130,130,130,i*arc,(i+1)*arc);
     ctx.fill();
+
+    // TEXT
+    ctx.save();
+    ctx.translate(130,130);
+    ctx.rotate(i*arc+arc/2);
+
+    ctx.fillStyle="white";
+    ctx.font="bold 16px sans-serif";
+    ctx.textAlign="center";
+
+    ctx.fillText("💰",80,-5);
+    ctx.fillText(rewards[i],80,15);
+
+    ctx.restore();
   }
 }
 draw();
 
-document.getElementById("spinBtn").onclick = function(){
+document.getElementById("spinBtn").onclick=()=>{
 
-  if(spinning) return;
-  spinning = true;
+  if(spinning)return;
+  spinning=true;
 
-  openAd(); // 🔥 earn per spin
+  openAd(); // 💰 earn
 
-  setTimeout(()=>{
+  let index=Math.floor(Math.random()*rewards.length);
+  let stopAngle=(Math.PI*2)-(index*arc)-arc/2;
 
-    let index = Math.floor(Math.random()*rewards.length);
-    let win = rewards[index];
+  let target=angle+Math.PI*6+stopAngle;
 
-    coins += win;
-    updateUI();
+  let start=null;
 
-    spinning=false;
+  function anim(t){
+    if(!start)start=t;
 
-    alert("🎉 Won "+win);
+    let p=(t-start)/3000;
+    if(p>1)p=1;
 
-  },4000);
-}
+    let ease=1-Math.pow(1-p,3);
+    let cur=angle+(target-angle)*ease;
 
-// ===== WITHDRAW =====
-window.withdraw = function(){
-  if(coins < 1000){
-    alert("Min ₹10");
-    return;
+    ctx.clearRect(0,0,260,260);
+    ctx.save();
+    ctx.translate(130,130);
+    ctx.rotate(cur);
+    ctx.translate(-130,-130);
+    draw();
+    ctx.restore();
+
+    // 🔊 tick sound
+    if(Math.random()<0.1) tickSound.play();
+
+    if(p<1){
+      requestAnimationFrame(anim);
+    }else{
+      angle=target%(Math.PI*2);
+      finish(index);
+    }
   }
 
-  coins = 0;
+  requestAnimationFrame(anim);
+};
+
+function finish(index){
+  spinning=false;
+
+  let win=rewards[index];
+  coins+=win;
+
+  winSound.play();
+
+  // 💡 highlight
+  ctx.clearRect(0,0,260,260);
+  draw(index);
+
   updateUI();
 
-  alert("Withdraw sent 💸");
+  alert("🎉 "+win);
 }
-
-// ===== REFERRAL =====
-let uid = localStorage.getItem("uid");
-if(!uid){
-  uid = "u_"+Math.random().toString(36).substr(2,9);
-  localStorage.setItem("uid",uid);
-}
-
-window.copyInvite = function(){
-  let link = location.origin + location.pathname + "?ref=" + uid;
-  navigator.clipboard.writeText(link);
-  alert("Link Copied 🔗");
-}
-
-function applyRef(){
-  let p = new URLSearchParams(location.search);
-  let ref = p.get("ref");
-
-  if(ref && ref !== uid && !localStorage.getItem("ref_done")){
-    coins += 300;
-    localStorage.setItem("ref_done","yes");
-    updateUI();
-    alert("🎁 Referral Bonus +300");
-  }
-}
-applyRef();
 
 updateUI();
 
