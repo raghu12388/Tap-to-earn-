@@ -1,7 +1,7 @@
  <!DOCTYPE html>
 <html>
 <head>
-<title>Tap2Earn PRO</title>
+<title>Tap2Earn AUTO MONEY</title>
 
 <style>
 body{
@@ -57,10 +57,10 @@ body{
 /* POINTER */
 .pointer{
   position:absolute;
-  top:10px;
+  top:5px;
   left:50%;
   transform:translateX(-50%);
-  font-size:30px;
+  font-size:28px;
 }
 </style>
 </head>
@@ -71,7 +71,7 @@ body{
 <div id="home" class="page activePage">
   <h1>💰 <span id="coins">0</span></h1>
   <button class="tap" id="tapBtn">🚀</button><br><br>
-  <button class="btn" onclick="watchAd()">🎁 Watch Ad</button>
+  <button class="btn" onclick="watchAd()">🎁 Watch Ad & Earn</button>
 </div>
 
 <!-- SPIN -->
@@ -84,24 +84,33 @@ body{
   <button class="btn" id="spinBtn">🎰 SPIN</button>
 </div>
 
+<!-- WALLET -->
+<div id="walletPage" class="page">
+  <h2>Balance ₹ <span id="balance">0</span></h2>
+  <button class="btn" onclick="withdraw()">Withdraw</button>
+</div>
+
 <!-- FOOTER -->
 <div class="footer">
   <button class="nav-btn active" onclick="nav('home',this)">Home</button>
   <button class="nav-btn" onclick="nav('spinPage',this)">Spin</button>
+  <button class="nav-btn" onclick="nav('walletPage',this)">Wallet</button>
 </div>
 
 <script>
-window.onload=function(){
+window.onload = function(){
 
-let coins=0;
+// ===== DATA =====
+let coins = 0;
 
-// UI
+// ===== UI =====
 function updateUI(){
-  document.getElementById("coins").innerText=coins;
+  document.getElementById("coins").innerText = coins;
+  document.getElementById("balance").innerText = (coins/100).toFixed(2);
 }
 
-// NAV
-window.nav=function(id,btn){
+// ===== NAV =====
+window.nav = function(id,btn){
   document.querySelectorAll(".page").forEach(p=>p.classList.remove("activePage"));
   document.getElementById(id).classList.add("activePage");
 
@@ -109,81 +118,76 @@ window.nav=function(id,btn){
   btn.classList.add("active");
 }
 
-// TAP
-document.getElementById("tapBtn").onclick=()=>{
+// ===== TAP =====
+document.getElementById("tapBtn").onclick = function(){
   coins++;
   updateUI();
 }
 
-// ===== ADS =====
-const AD_LINK="https://www.profitableratecpm.com/xxxxx";
+// ===== ADS SYSTEM =====
+const AD_LINK = "https://www.profitableratecpm.com/xxxxx";
 
-function openAd(){
-  if(window.Telegram && Telegram.WebApp){
-    Telegram.WebApp.openLink(AD_LINK);
-  } else {
-    window.location.href=AD_LINK;
-  }
+// open ad + mark return
+function openAdAndPrepare(){
+  localStorage.setItem("auto_spin","yes");
+  window.location.href = AD_LINK;
 }
 
-window.watchAd=function(){
-  openAd();
-  setTimeout(()=>{
-    coins+=200;
-    updateUI();
-    alert("🎁 +200");
-  },4000);
+// watch ad button
+window.watchAd = function(){
+  openAdAndPrepare();
 }
 
-// ===== SOUND =====
-const tickSound=new Audio("https://actions.google.com/sounds/v1/foley/click.ogg");
-const winSound=new Audio("https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg");
-
-// ===== SPIN =====
-const ctx=document.getElementById("wheel").getContext("2d");
-
-let spinning=false;
-let angle=0;
+// ===== SPIN SYSTEM =====
+const ctx = document.getElementById("wheel").getContext("2d");
+let spinning=false, angle=0;
 
 const rewards=[50,100,150,300,500,1000];
 const arc=(2*Math.PI)/rewards.length;
 
-function draw(highlightIndex=-1){
+function draw(highlight=-1){
   for(let i=0;i<rewards.length;i++){
-
     ctx.beginPath();
-    ctx.fillStyle=i==highlightIndex?"gold":(i%2?"#ff00cc":"#330066");
+    ctx.fillStyle=i==highlight?"gold":(i%2?"#ff00cc":"#330066");
     ctx.moveTo(130,130);
     ctx.arc(130,130,130,i*arc,(i+1)*arc);
     ctx.fill();
 
-    // TEXT
     ctx.save();
     ctx.translate(130,130);
     ctx.rotate(i*arc+arc/2);
-
     ctx.fillStyle="white";
-    ctx.font="bold 16px sans-serif";
     ctx.textAlign="center";
-
     ctx.fillText("💰",80,-5);
     ctx.fillText(rewards[i],80,15);
-
     ctx.restore();
   }
 }
 draw();
 
-document.getElementById("spinBtn").onclick=()=>{
-
+// spin button
+document.getElementById("spinBtn").onclick = function(){
   if(spinning)return;
-  spinning=true;
+  openAdAndPrepare();
+};
 
-  openAd(); // 💰 earn
+// auto spin after return
+function checkAutoSpin(){
+  if(localStorage.getItem("auto_spin")=="yes"){
+    localStorage.removeItem("auto_spin");
+
+    setTimeout(()=>{
+      spin();
+    },1000);
+  }
+}
+
+// real spin
+function spin(){
+  spinning=true;
 
   let index=Math.floor(Math.random()*rewards.length);
   let stopAngle=(Math.PI*2)-(index*arc)-arc/2;
-
   let target=angle+Math.PI*6+stopAngle;
 
   let start=null;
@@ -205,9 +209,6 @@ document.getElementById("spinBtn").onclick=()=>{
     draw();
     ctx.restore();
 
-    // 🔊 tick sound
-    if(Math.random()<0.1) tickSound.play();
-
     if(p<1){
       requestAnimationFrame(anim);
     }else{
@@ -217,26 +218,34 @@ document.getElementById("spinBtn").onclick=()=>{
   }
 
   requestAnimationFrame(anim);
-};
+}
 
+// finish
 function finish(index){
   spinning=false;
 
   let win=rewards[index];
   coins+=win;
 
-  winSound.play();
-
-  // 💡 highlight
-  ctx.clearRect(0,0,260,260);
-  draw(index);
-
   updateUI();
 
-  alert("🎉 "+win);
+  alert("🎉 Won "+win);
 }
 
+// withdraw
+window.withdraw=function(){
+  if(coins<1000){
+    alert("Min ₹10");
+    return;
+  }
+  coins=0;
+  updateUI();
+  alert("Withdraw Sent 💸");
+}
+
+// init
 updateUI();
+checkAutoSpin();
 
 }
 </script>
