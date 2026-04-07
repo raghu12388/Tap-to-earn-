@@ -3,8 +3,6 @@
 <head>
 <title>Tap2Earn MONEY MACHINE</title>
 
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
-
 <style>
 body{
   margin:0;
@@ -12,34 +10,30 @@ body{
   color:white;
   font-family:sans-serif;
   text-align:center;
-  padding-bottom:90px;
+  padding-bottom:80px;
 }
 
-/* PAGES */
 .page{display:none;padding-top:20px;}
 .activePage{display:block;}
 
-/* TAP */
 .tap{
-  width:170px;height:170px;
+  width:160px;height:160px;
   border-radius:50%;
   background:radial-gradient(circle,#ff00cc,#330066);
   border:none;
-  font-size:28px;
+  font-size:30px;
   color:white;
 }
 
-/* BUTTON */
 .btn{
   padding:10px 20px;
+  margin:5px;
   border:none;
   border-radius:10px;
   background:#ff00cc;
   color:white;
-  margin:5px;
 }
 
-/* FOOTER */
 .footer{
   position:fixed;
   bottom:0;
@@ -52,9 +46,9 @@ body{
 }
 
 .nav-btn{
-  color:#aaa;
   background:none;
   border:none;
+  color:#aaa;
 }
 .nav-btn.active{
   color:#ff00cc;
@@ -67,9 +61,7 @@ body{
 <!-- HOME -->
 <div id="home" class="page activePage">
   <h1>💰 <span id="coins">0</span></h1>
-  <button class="tap" id="tapBtn">🚀</button>
-
-  <br><br>
+  <button class="tap" id="tapBtn">🚀</button><br><br>
 
   <button class="btn" onclick="watchAd()">🎁 Watch Ad & Earn</button>
 </div>
@@ -87,7 +79,7 @@ body{
 
   <br><br>
 
-  <h3>👥 Invite & Earn</h3>
+  <h3>Invite & Earn</h3>
   <button class="btn" onclick="copyInvite()">Copy Link</button>
 </div>
 
@@ -101,15 +93,7 @@ body{
 <script>
 window.onload = function(){
 
-// ===== DATA =====
 let coins = 0;
-
-// ===== USER ID =====
-let userId = localStorage.getItem("uid");
-if(!userId){
-  userId = "u_"+Math.random().toString(36).substr(2,9);
-  localStorage.setItem("uid",userId);
-}
 
 // ===== UI =====
 function updateUI(){
@@ -132,11 +116,19 @@ document.getElementById("tapBtn").onclick = function(){
   updateUI();
 }
 
-// ===== ADS =====
-const AD_LINK = "https://your-ad-link.com";
+// ===== ADS (TELEGRAM SAFE) =====
+const AD_LINK = "https://www.profitableratecpm.com/xxxxx";
+
+function openAd(){
+  if(window.Telegram && Telegram.WebApp){
+    Telegram.WebApp.openLink(AD_LINK);
+  } else {
+    window.location.href = AD_LINK;
+  }
+}
 
 window.watchAd = function(){
-  window.open(AD_LINK,"_blank");
+  openAd();
 
   setTimeout(()=>{
     coins += 200;
@@ -163,68 +155,59 @@ function draw(){
 draw();
 
 document.getElementById("spinBtn").onclick = function(){
-  if(spinning)return;
-  spinning=true;
 
-  let target=angle+Math.random()*10;
-  let start=null;
+  if(spinning) return;
+  spinning = true;
 
-  function anim(t){
-    if(!start)start=t;
-    let p=(t-start)/3000;
-    if(p>1)p=1;
+  openAd(); // 🔥 earn per spin
 
-    let cur=angle+(target-angle)*p;
+  setTimeout(()=>{
 
-    ctx.clearRect(0,0,260,260);
-    ctx.save();
-    ctx.translate(130,130);
-    ctx.rotate(cur);
-    ctx.translate(-130,-130);
-    draw();
-    ctx.restore();
+    let index = Math.floor(Math.random()*rewards.length);
+    let win = rewards[index];
 
-    if(p<1)requestAnimationFrame(anim);
-    else{
-      angle=target;
-      finish();
-    }
-  }
-  requestAnimationFrame(anim);
-};
+    coins += win;
+    updateUI();
 
-function finish(){
-  spinning=false;
-  let win=rewards[Math.floor(Math.random()*rewards.length)];
-  coins+=win;
-  updateUI();
-  alert("🎉 Won "+win);
+    spinning=false;
+
+    alert("🎉 Won "+win);
+
+  },4000);
 }
 
 // ===== WITHDRAW =====
 window.withdraw = function(){
-  if(coins<1000){
+  if(coins < 1000){
     alert("Min ₹10");
     return;
   }
-  coins=0;
+
+  coins = 0;
   updateUI();
+
   alert("Withdraw sent 💸");
 }
 
 // ===== REFERRAL =====
+let uid = localStorage.getItem("uid");
+if(!uid){
+  uid = "u_"+Math.random().toString(36).substr(2,9);
+  localStorage.setItem("uid",uid);
+}
+
 window.copyInvite = function(){
-  let link = location.href + "?ref=" + userId;
+  let link = location.origin + location.pathname + "?ref=" + uid;
   navigator.clipboard.writeText(link);
-  alert("Link Copied");
+  alert("Link Copied 🔗");
 }
 
 function applyRef(){
-  let p=new URLSearchParams(location.search);
-  let ref=p.get("ref");
+  let p = new URLSearchParams(location.search);
+  let ref = p.get("ref");
 
-  if(ref && ref!==userId && !localStorage.getItem("ref_done")){
-    coins+=300;
+  if(ref && ref !== uid && !localStorage.getItem("ref_done")){
+    coins += 300;
     localStorage.setItem("ref_done","yes");
     updateUI();
     alert("🎁 Referral Bonus +300");
