@@ -1,7 +1,7 @@
  <!DOCTYPE html>
 <html>
 <head>
-<title>Tap2Earn PRO MONEY</title>
+<title>Tap2Earn FINAL</title>
 
 <style>
 body{
@@ -42,13 +42,12 @@ body{
   background:#111;
   display:flex;
   justify-content:space-around;
-  align-items:center;
 }
 
 .nav-btn{
-  color:#aaa;
   background:none;
   border:none;
+  color:#aaa;
 }
 .nav-btn.active{
   color:#ff00cc;
@@ -59,7 +58,6 @@ body{
   top:5px;
   left:50%;
   transform:translateX(-50%);
-  font-size:28px;
 }
 </style>
 </head>
@@ -99,36 +97,36 @@ body{
 </div>
 
 <script>
-window.onload = function(){
+window.onload=function(){
 
-let coins = 0;
+let coins=0;
 
-// ===== AD CONFIG =====
-const AD_LINK = "https://www.profitableratecpm.com/xxxxx";
-const DAILY_LIMIT = 20;
-const COOLDOWN = 30;
+// ===== CONFIG =====
+const AD_LINK="https://www.profitableratecpm.com/xxxxx";
+const DAILY_LIMIT=20;
+const COOLDOWN=30;
 
 // ===== STORAGE =====
-let adCount = parseInt(localStorage.getItem("ad_count")) || 0;
-let lastAdTime = parseInt(localStorage.getItem("last_ad_time")) || 0;
-let lastDay = localStorage.getItem("ad_day");
+let adCount=parseInt(localStorage.getItem("ad_count"))||0;
+let lastAd=parseInt(localStorage.getItem("last_ad"))||0;
+let day=localStorage.getItem("day");
 
-let today = new Date().toDateString();
-if(lastDay !== today){
-  adCount = 0;
-  localStorage.setItem("ad_day", today);
-  localStorage.setItem("ad_count", 0);
+let today=new Date().toDateString();
+if(day!==today){
+  adCount=0;
+  localStorage.setItem("day",today);
+  localStorage.setItem("ad_count",0);
 }
 
 // ===== UI =====
 function updateUI(){
-  document.getElementById("coins").innerText = coins;
-  document.getElementById("balance").innerText = (coins/100).toFixed(2);
-  document.getElementById("adCount").innerText = adCount;
+  document.getElementById("coins").innerText=coins;
+  document.getElementById("balance").innerText=(coins/100).toFixed(2);
+  document.getElementById("adCount").innerText=adCount;
 }
 
 // ===== NAV =====
-window.nav = function(id,btn){
+window.nav=function(id,btn){
   document.querySelectorAll(".page").forEach(p=>p.classList.remove("activePage"));
   document.getElementById(id).classList.add("activePage");
 
@@ -137,12 +135,12 @@ window.nav = function(id,btn){
 }
 
 // ===== TAP =====
-document.getElementById("tapBtn").onclick = ()=>{
+document.getElementById("tapBtn").onclick=()=>{
   coins++;
   updateUI();
 }
 
-// ===== ADS SAFE =====
+// ===== SAFE AD OPEN =====
 function openAd(){
   if(window.Telegram && Telegram.WebApp){
     Telegram.WebApp.openLink(AD_LINK,{try_instant_view:false});
@@ -152,18 +150,17 @@ function openAd(){
 }
 
 // ===== WATCH AD =====
-window.watchAd = function(){
+window.watchAd=function(){
 
-  let now = Date.now();
+  let now=Date.now();
 
-  if(adCount >= DAILY_LIMIT){
-    alert("🚫 Daily limit reached");
+  if(adCount>=DAILY_LIMIT){
+    alert("🚫 Limit reached");
     return;
   }
 
-  let diff = (now - lastAdTime)/1000;
-  if(diff < COOLDOWN){
-    alert("⏳ Wait "+Math.ceil(COOLDOWN-diff)+" sec");
+  if((now-lastAd)/1000<COOLDOWN){
+    alert("⏳ Wait "+Math.ceil(COOLDOWN-(now-lastAd)/1000)+" sec");
     return;
   }
 
@@ -172,23 +169,23 @@ window.watchAd = function(){
   openAd();
 
   adCount++;
-  lastAdTime = now;
+  lastAd=now;
 
   localStorage.setItem("ad_count",adCount);
-  localStorage.setItem("last_ad_time",lastAdTime);
+  localStorage.setItem("last_ad",lastAd);
 }
 
 // ===== SPIN =====
-const ctx = document.getElementById("wheel").getContext("2d");
-let spinning=false, angle=0;
+const ctx=document.getElementById("wheel").getContext("2d");
 
+let spinning=false,angle=0;
 const rewards=[50,100,150,300,500,1000];
 const arc=(2*Math.PI)/rewards.length;
 
-function draw(highlight=-1){
+function draw(high=-1){
   for(let i=0;i<rewards.length;i++){
     ctx.beginPath();
-    ctx.fillStyle=i==highlight?"gold":(i%2?"#ff00cc":"#330066");
+    ctx.fillStyle=i==high?"gold":(i%2?"#ff00cc":"#330066");
     ctx.moveTo(130,130);
     ctx.arc(130,130,130,i*arc,(i+1)*arc);
     ctx.fill();
@@ -205,27 +202,26 @@ function draw(highlight=-1){
 }
 draw();
 
-document.getElementById("spinBtn").onclick = ()=>{
+document.getElementById("spinBtn").onclick=()=>{
   if(spinning)return;
   watchAd();
 };
 
-// ===== AUTO RETURN SPIN =====
-function checkAutoSpin(){
+// ===== AUTO RETURN =====
+function checkAuto(){
   if(localStorage.getItem("auto_spin")=="yes"){
     localStorage.removeItem("auto_spin");
-
     setTimeout(()=>spin(),1000);
   }
 }
 
-// ===== REAL SPIN =====
+// ===== SPIN LOGIC =====
 function spin(){
   spinning=true;
 
   let index=Math.floor(Math.random()*rewards.length);
-  let stopAngle=(Math.PI*2)-(index*arc)-arc/2;
-  let target=angle+Math.PI*6+stopAngle;
+  let stop=(Math.PI*2)-(index*arc)-arc/2;
+  let target=angle+Math.PI*6+stop;
 
   let start=null;
 
@@ -277,12 +273,12 @@ window.withdraw=function(){
   }
   coins=0;
   updateUI();
-  alert("Withdraw Sent 💸");
+  alert("Withdraw sent 💸");
 }
 
 // INIT
 updateUI();
-checkAutoSpin();
+checkAuto();
 
 }
 </script>
