@@ -1,16 +1,23 @@
  <!DOCTYPE html>
 <html>
 <head>
-<title>Tap2Earn FINAL FIX</title>
+<title>Tap2Earn FINAL</title>
+
+<!-- Telegram SDK -->
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 
 <style>
 body{
   margin:0;
   background:black;
   color:white;
-  text-align:center;
   font-family:sans-serif;
+  text-align:center;
+  padding-bottom:80px;
 }
+
+.page{display:none;}
+.activePage{display:block;}
 
 .tap{
   width:150px;height:150px;
@@ -23,15 +30,36 @@ body{
 
 .btn{
   padding:10px 20px;
-  margin:10px;
-  background:#ff00cc;
+  margin:5px;
   border:none;
+  border-radius:10px;
+  background:#ff00cc;
   color:white;
+}
+
+.footer{
+  position:fixed;
+  bottom:0;
+  width:100%;
+  height:70px;
+  background:#111;
+  display:flex;
+  justify-content:space-around;
+  align-items:center;
+}
+
+.nav-btn{
+  background:none;
+  border:none;
+  color:#aaa;
+}
+.nav-btn.active{
+  color:#ff00cc;
 }
 
 .pointer{
   position:absolute;
-  top:10px;
+  top:5px;
   left:50%;
   transform:translateX(-50%);
 }
@@ -40,73 +68,102 @@ body{
 
 <body>
 
-<h1>💰 <span id="coins">0</span></h1>
+<!-- HOME -->
+<div id="home" class="page activePage">
+  <h1>💰 <span id="coins">0</span></h1>
 
-<button class="tap" id="tapBtn">🚀</button>
-<br><br>
+  <button class="tap" id="tapBtn">🚀</button><br><br>
 
-<button class="btn" onclick="watchAd()">🎁 Watch Ad</button>
+  <!-- ✅ WORKING ADS BUTTON -->
+  <a href="https://www.profitableratecpm.com/xxxxx" target="_blank" onclick="markAd()">
+    <button class="btn">🎁 Watch Ad</button>
+  </a>
 
-<div style="position:relative;margin-top:20px;">
-  <div class="pointer">🔻</div>
-  <canvas id="wheel" width="260" height="260"></canvas>
+  <p>Ads Today: <span id="adCount">0</span>/20</p>
 </div>
 
-<br>
-<button class="btn" id="spinBtn">🎰 SPIN</button>
+<!-- SPIN -->
+<div id="spinPage" class="page">
+  <div style="position:relative">
+    <div class="pointer">🔻</div>
+    <canvas id="wheel" width="260" height="260"></canvas>
+  </div>
+  <br>
+
+  <!-- ✅ SPIN ALSO MONETIZED -->
+  <a href="https://www.profitableratecpm.com/xxxxx" target="_blank" onclick="markAd()">
+    <button class="btn">🎰 SPIN</button>
+  </a>
+</div>
+
+<!-- WALLET -->
+<div id="walletPage" class="page">
+  <h2>Balance ₹ <span id="balance">0</span></h2>
+  <button class="btn" onclick="withdraw()">Withdraw</button>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <button class="nav-btn active" onclick="nav('home',this)">Home</button>
+  <button class="nav-btn" onclick="nav('spinPage',this)">Spin</button>
+  <button class="nav-btn" onclick="nav('walletPage',this)">Wallet</button>
+</div>
 
 <script>
-
-// ===== DATA =====
 let coins = 0;
+let adCount = parseInt(localStorage.getItem("ad_count")) || 0;
 
-// ===== UI =====
+// UI
 function updateUI(){
   document.getElementById("coins").innerText = coins;
+  document.getElementById("balance").innerText = (coins/100).toFixed(2);
+  document.getElementById("adCount").innerText = adCount;
 }
 
-// ===== TAP =====
+// NAV
+function nav(id,btn){
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("activePage"));
+  document.getElementById(id).classList.add("activePage");
+
+  document.querySelectorAll(".nav-btn").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+}
+
+// TAP
 document.getElementById("tapBtn").onclick = ()=>{
   coins++;
   updateUI();
 };
 
-// ===== AD LINK =====
-const AD_LINK = "https://www.profitableratecpm.com/xxxxx";
+// MARK AD CLICK
+function markAd(){
+  localStorage.setItem("auto_spin","yes");
 
-// ===== SAFE AD OPEN =====
-function openAd(){
-  if(window.Telegram && Telegram.WebApp){
-    Telegram.WebApp.openLink(AD_LINK,{try_instant_view:false});
-  } else {
-    window.open(AD_LINK,"_blank");
+  adCount++;
+  localStorage.setItem("ad_count",adCount);
+}
+
+// AUTO RETURN
+function checkReturn(){
+  if(localStorage.getItem("auto_spin")=="yes"){
+    localStorage.removeItem("auto_spin");
+    setTimeout(()=>spin(),1000);
   }
 }
 
-// ===== WATCH AD =====
-function watchAd(){
-  localStorage.setItem("auto_spin","yes");
-  openAd();
-}
+// SPIN SYSTEM
+const ctx = document.getElementById("wheel").getContext("2d");
 
-// ===== CANVAS =====
-const canvas = document.getElementById("wheel");
-const ctx = canvas.getContext("2d");
+let spinning=false, angle=0;
+const rewards=[50,100,150,300,500,1000];
+const arc=(2*Math.PI)/rewards.length;
 
-let spinning = false;
-let angle = 0;
-
-const rewards = [50,100,150,300,500,1000];
-const arc = (2*Math.PI)/rewards.length;
-
-// DRAW
 function draw(high=-1){
   ctx.clearRect(0,0,260,260);
 
   for(let i=0;i<rewards.length;i++){
     ctx.beginPath();
-    ctx.fillStyle = i==high ? "gold" : (i%2 ? "#ff00cc" : "#330066");
-
+    ctx.fillStyle=i==high?"gold":(i%2?"#ff00cc":"#330066");
     ctx.moveTo(130,130);
     ctx.arc(130,130,130,i*arc,(i+1)*arc);
     ctx.fill();
@@ -114,97 +171,76 @@ function draw(high=-1){
     ctx.save();
     ctx.translate(130,130);
     ctx.rotate(i*arc+arc/2);
-
     ctx.fillStyle="white";
     ctx.textAlign="center";
-
     ctx.fillText("💰",80,-5);
     ctx.fillText(rewards[i],80,15);
-
     ctx.restore();
   }
 }
 draw();
 
-// SPIN BUTTON
-document.getElementById("spinBtn").onclick = ()=>{
-  if(spinning) return;
-
-  localStorage.setItem("auto_spin","yes");
-  openAd();
-};
-
-// AUTO RETURN
-function checkReturn(){
-  if(localStorage.getItem("auto_spin")=="yes"){
-    localStorage.removeItem("auto_spin");
-
-    setTimeout(()=>{
-      spin();
-    },1000);
-  }
-}
-
-// SPIN FUNCTION
 function spin(){
+  if(spinning)return;
+  spinning=true;
 
-  spinning = true;
+  let index=Math.floor(Math.random()*rewards.length);
+  let stop=(Math.PI*2)-(index*arc)-arc/2;
+  let target=angle+Math.PI*6+stop;
 
-  let index = Math.floor(Math.random()*rewards.length);
-  let stop = (Math.PI*2)-(index*arc)-arc/2;
+  let start=null;
 
-  let target = angle + Math.PI*6 + stop;
+  function anim(t){
+    if(!start)start=t;
 
-  let start = null;
+    let p=(t-start)/3000;
+    if(p>1)p=1;
 
-  function animate(t){
-    if(!start) start = t;
-
-    let p = (t-start)/3000;
-    if(p>1) p=1;
-
-    let ease = 1-Math.pow(1-p,3);
-    let current = angle + (target-angle)*ease;
+    let ease=1-Math.pow(1-p,3);
+    let cur=angle+(target-angle)*ease;
 
     ctx.clearRect(0,0,260,260);
-
     ctx.save();
     ctx.translate(130,130);
-    ctx.rotate(current);
+    ctx.rotate(cur);
     ctx.translate(-130,-130);
-
     draw();
     ctx.restore();
 
     if(p<1){
-      requestAnimationFrame(animate);
-    } else {
-      angle = target % (Math.PI*2);
+      requestAnimationFrame(anim);
+    }else{
+      angle=target%(Math.PI*2);
       finish(index);
     }
   }
 
-  requestAnimationFrame(animate);
+  requestAnimationFrame(anim);
 }
 
-// RESULT
 function finish(index){
-  spinning = false;
-
-  let win = rewards[index];
-  coins += win;
-
+  spinning=false;
+  let win=rewards[index];
+  coins+=win;
   updateUI();
-
   draw(index);
-
   alert("🎉 Won "+win);
+}
+
+// WITHDRAW
+function withdraw(){
+  if(coins<1000){
+    alert("Min ₹10");
+    return;
+  }
+  coins=0;
+  updateUI();
+  alert("Withdraw sent 💸");
 }
 
 // INIT
 updateUI();
 checkReturn();
-
 </script>
 
 </body>
