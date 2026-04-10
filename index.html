@@ -1,117 +1,143 @@
  <!DOCTYPE html>
 <html>
 <head>
-<title>Tap2Earn PRO FINAL</title>
+<title>Tap2Earn PRO Firebase</title>
 
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js"></script>
+
 <style>
 body{
-  margin:0;
-  background:black;
-  color:white;
-  font-family:sans-serif;
-  text-align:center;
-  padding-bottom:80px;
+  margin:0;background:black;color:white;
+  font-family:sans-serif;text-align:center;padding-bottom:80px;
 }
-
 .page{display:none;}
 .activePage{display:block;}
 
 .tap{
-  width:160px;height:160px;
-  border-radius:50%;
+  width:160px;height:160px;border-radius:50%;
   background:radial-gradient(circle,#ff00cc,#330066);
-  border:none;
-  font-size:30px;
-  color:white;
+  border:none;font-size:30px;color:white;
 }
 
 .btn{
-  padding:10px 20px;
-  margin:5px;
-  border:none;
-  border-radius:10px;
-  background:#ff00cc;
-  color:white;
+  padding:10px 20px;margin:5px;
+  border:none;border-radius:10px;
+  background:#ff00cc;color:white;
 }
 
 .footer{
-  position:fixed;
-  bottom:0;
-  width:100%;
-  height:70px;
-  background:#111;
-  display:flex;
-  justify-content:space-around;
-  align-items:center;
+  position:fixed;bottom:0;width:100%;
+  height:70px;background:#111;
+  display:flex;justify-content:space-around;align-items:center;
 }
 
-.nav-btn{
-  background:none;
-  border:none;
-  color:#aaa;
-}
-.nav-btn.active{
-  color:#ff00cc;
-}
-
-.pointer{
-  position:absolute;
-  top:5px;
-  left:50%;
-  transform:translateX(-50%);
-}
+.nav-btn{background:none;border:none;color:#aaa;}
+.nav-btn.active{color:#ff00cc;}
 </style>
 </head>
 
 <body>
 
-<!-- HOME -->
 <div id="home" class="page activePage">
   <h1>💰 <span id="coins">0</span></h1>
-
   <button class="tap" id="tapBtn">🚀</button><br><br>
 
   <button class="btn" onclick="watchAd()">🎁 Watch Ad</button>
+  <button class="btn" onclick="share()">📤 Invite</button>
+
   <p>Ads Today: <span id="adCount">0</span></p>
 </div>
 
-<!-- SPIN -->
-<div id="spinPage" class="page">
-  <div style="position:relative">
-    <div class="pointer">🔻</div>
-    <canvas id="wheel" width="260" height="260"></canvas>
-  </div>
-  <br>
-  <button class="btn" onclick="spinAd()">🎰 Spin (Watch Ad)</button>
-</div>
-
-<!-- WALLET -->
 <div id="walletPage" class="page">
   <h2>Balance ₹ <span id="balance">0</span></h2>
   <button class="btn" onclick="withdraw()">Withdraw</button>
 </div>
 
-<!-- FOOTER -->
 <div class="footer">
   <button class="nav-btn active" onclick="nav('home',this)">Home</button>
-  <button class="nav-btn" onclick="nav('spinPage',this)">Spin</button>
   <button class="nav-btn" onclick="nav('walletPage',this)">Wallet</button>
 </div>
 
 <script>
 
-// ===== CONFIG =====
-const AD_LINK = "<script src="https://pl29090077.profitablecpmratenetwork.com/da/eb/9f/daeb9f796ffdf6cbd8d4f44ec8e3ee3f.js"></script>
+// 🔥 PASTE YOUR FIREBASE CONFIG HERE
+const firebaseConfig = {
+  apiKey: "YOUR_KEY",
+  authDomain: "YOUR_DOMAIN",
+  databaseURL: "YOUR_DB_URL",
+  projectId: "YOUR_ID",
+};
 
-const REWARD = 200;
-const MIN_TIME = 5000;
+// INIT
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// ===== CONFIG =====
+const AD_LINK = "https://your-direct-link.com";
+const MIN_TIME = 8000;
+
+// ===== USER =====
+const tgUser = Telegram.WebApp.initDataUnsafe?.user || {};
+const userId = tgUser.id || "user_" + Math.floor(Math.random()*999999);
+
+// REFERRAL
+const ref = new URLSearchParams(window.location.search).get("ref");
 
 // ===== DATA =====
 let coins = 0;
-let adStart = 0;
-let adCount = parseInt(localStorage.getItem("ad_count")) || 0;
+let adCount = 0;
+let lastAdTime = 0;
+
+// ===== CREATE USER =====
+async function createUser(){
+
+  const userRef = db.ref("users/" + userId);
+  const snap = await userRef.get();
+
+  if(!snap.exists()){
+
+    let bonus = 0;
+
+    if(ref && ref !== userId){
+      bonus = 500;
+
+      db.ref("users/" + ref + "/coins")
+        .transaction(c => (c || 0) + 500);
+    }
+
+    await userRef.set({
+      coins: 100 + bonus,
+      ads: 0,
+      referredBy: ref || null
+    });
+  }
+}
+
+// ===== LISTEN =====
+function listenUser(){
+
+  db.ref("users/" + userId).on("value", snap => {
+
+    let data = snap.val() || {};
+
+    coins = data.coins || 0;
+    adCount = data.ads || 0;
+
+    updateUI();
+  });
+}
+
+// ===== SAVE =====
+function saveUser(){
+  db.ref("users/" + userId).update({
+    coins: coins,
+    ads: adCount
+  });
+}
 
 // ===== UI =====
 function updateUI(){
@@ -132,148 +158,85 @@ function nav(id,btn){
 // ===== TAP =====
 document.getElementById("tapBtn").onclick = ()=>{
   coins++;
-  updateUI();
+  saveUser();
 };
 
-// ===== OPEN AD =====
-function openAd(){
-  if(window.Telegram && Telegram.WebApp){
-    Telegram.WebApp.openLink(AD_LINK,{try_instant_view:false});
+// ===== AD =====
+function watchAd(){
+
+  let now = Date.now();
+
+  if(now - lastAdTime < 15000){
+    alert("⏳ Wait...");
+    return;
+  }
+
+  lastAdTime = now;
+  localStorage.setItem("ad_start", now);
+
+  if(window.Telegram){
+    Telegram.WebApp.openLink(AD_LINK);
   } else {
     window.open(AD_LINK,"_blank");
   }
 }
 
-// ===== WATCH AD =====
-function watchAd(){
-  adStart = Date.now();
-  localStorage.setItem("ad_start", adStart);
-  openAd();
-}
-
-// ===== SPIN WITH AD =====
-function spinAd(){
-  localStorage.setItem("auto_spin","yes");
-  watchAd();
-}
-
-// ===== VERIFY AFTER RETURN =====
+// ===== VERIFY =====
 window.onfocus = function(){
 
   let start = parseInt(localStorage.getItem("ad_start"));
   if(!start) return;
 
-  let time = Date.now() - start;
+  let stay = Date.now() - start;
   localStorage.removeItem("ad_start");
 
-  if(time >= MIN_TIME){
-    coins += REWARD;
+  if(stay >= MIN_TIME){
+
+    let reward = Math.floor(Math.random()*200)+100;
+
+    coins += reward;
     adCount++;
-    localStorage.setItem("ad_count",adCount);
 
-    updateUI();
+    saveUser();
 
-    alert("✅ Ad verified +"+REWARD);
-
-    if(localStorage.getItem("auto_spin")=="yes"){
-      localStorage.removeItem("auto_spin");
-      setTimeout(()=>spin(),1000);
-    }
+    alert("✅ Earned +" + reward);
 
   } else {
-    alert("❌ Stay longer on ad");
+    alert("❌ Stay longer");
   }
 };
 
-// ===== SPIN SYSTEM =====
-const ctx = document.getElementById("wheel").getContext("2d");
+// ===== REF LINK =====
+function share(){
 
-let spinning=false, angle=0;
-const rewards=[50,100,150,300,500,1000];
-const arc=(2*Math.PI)/rewards.length;
+  let link = window.location.origin + "?ref=" + userId;
 
-function draw(high=-1){
-  ctx.clearRect(0,0,260,260);
+  let text = "🔥 Earn money 💰\n" + link;
 
-  for(let i=0;i<rewards.length;i++){
-    ctx.beginPath();
-    ctx.fillStyle=i==high?"gold":(i%2?"#ff00cc":"#330066");
-    ctx.moveTo(130,130);
-    ctx.arc(130,130,130,i*arc,(i+1)*arc);
-    ctx.fill();
-
-    ctx.save();
-    ctx.translate(130,130);
-    ctx.rotate(i*arc+arc/2);
-    ctx.fillStyle="white";
-    ctx.textAlign="center";
-    ctx.fillText("💰",80,-5);
-    ctx.fillText(rewards[i],80,15);
-    ctx.restore();
+  if(window.Telegram){
+    Telegram.WebApp.openTelegramLink(
+      "https://t.me/share/url?url=" + encodeURIComponent(link) +
+      "&text=" + encodeURIComponent(text)
+    );
+  } else {
+    alert(link);
   }
-}
-draw();
-
-function spin(){
-  if(spinning)return;
-  spinning=true;
-
-  let index=Math.floor(Math.random()*rewards.length);
-  let stop=(Math.PI*2)-(index*arc)-arc/2;
-  let target=angle+Math.PI*6+stop;
-
-  let start=null;
-
-  function anim(t){
-    if(!start)start=t;
-
-    let p=(t-start)/3000;
-    if(p>1)p=1;
-
-    let ease=1-Math.pow(1-p,3);
-    let cur=angle+(target-angle)*ease;
-
-    ctx.clearRect(0,0,260,260);
-    ctx.save();
-    ctx.translate(130,130);
-    ctx.rotate(cur);
-    ctx.translate(-130,-130);
-    draw();
-    ctx.restore();
-
-    if(p<1){
-      requestAnimationFrame(anim);
-    }else{
-      angle=target%(Math.PI*2);
-      finish(index);
-    }
-  }
-
-  requestAnimationFrame(anim);
-}
-
-function finish(index){
-  spinning=false;
-  let win=rewards[index];
-  coins+=win;
-  updateUI();
-  draw(index);
-  alert("🎉 Won "+win);
 }
 
 // ===== WITHDRAW =====
 function withdraw(){
-  if(coins<1000){
+
+  if(coins < 1000){
     alert("Min ₹10");
     return;
   }
-  coins=0;
-  updateUI();
-  alert("Withdraw sent 💸");
+
+  alert("Send to admin manually (next upgrade 🔥)");
 }
 
 // INIT
-updateUI();
+createUser();
+listenUser();
 
 </script>
 
