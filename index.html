@@ -1,241 +1,95 @@
  <!DOCTYPE html>
 <html>
 <head>
-<title>Tap2Earn MASTER FINAL</title>
+<title>Tap2Earn SAFE</title>
 
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
-
-<!-- ✅ Firebase v8 (stable) -->
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
 <style>
-body{margin:0;background:black;color:white;font-family:sans-serif;text-align:center;padding-bottom:80px}
-.page{display:none}
-.activePage{display:block}
-.tap{width:150px;height:150px;border-radius:50%;background:radial-gradient(circle,#ff00cc,#330066);border:none;font-size:30px;color:white}
-.btn{padding:10px;margin:5px;border:none;border-radius:10px;background:#ff00cc;color:white}
-.footer{position:fixed;bottom:0;width:100%;height:70px;background:#111;display:flex;justify-content:space-around;align-items:center}
-.nav-btn{background:none;border:none;color:#aaa}
-.nav-btn.active{color:#ff00cc}
+body{background:black;color:white;text-align:center;font-family:sans-serif}
+.btn{padding:10px;margin:5px;background:#ff00cc;color:white;border:none;border-radius:10px}
 </style>
 </head>
 
 <body>
 
-<div id="home" class="page activePage">
 <h1>💰 <span id="coins">0</span></h1>
-<p>Level: <span id="level">1</span></p>
 
-<button class="tap" onclick="tap()">🚀</button><br><br>
-
-<button class="btn" onclick="watchAd()">🎁 Watch Ad</button>
-<button class="btn" onclick="dailyBonus()">🎁 Daily</button>
-<button class="btn" onclick="share()">📤 Invite</button>
-
-<p>Ads: <span id="ads">0</span></p>
-</div>
-
-<div id="spinPage" class="page">
-<h2>🎰 Spin</h2>
-<canvas id="wheel" width="260" height="260"></canvas><br>
-<button class="btn" onclick="spinAd()">Spin (Ad)</button>
-</div>
-
-<div class="footer">
-<button class="nav-btn active" onclick="nav('home',this)">Home</button>
-<button class="nav-btn" onclick="nav('spinPage',this)">Spin</button>
-</div>
+<button class="btn" onclick="tap()">Tap</button>
+<button class="btn" onclick="watchAd()">Watch Ad</button>
+<button class="btn" onclick="dailyBonus()">Daily</button>
+<button class="btn" onclick="test()">TEST</button>
 
 <script>
-window.onload=function(){
 
-// 🔥 FIREBASE CONFIG (PUT YOURS)
-const firebaseConfig = {
-  apiKey: "YOUR_KEY",
-  authDomain: "YOUR_DOMAIN",
-  databaseURL: "YOUR_DB_URL",
-  projectId: "YOUR_ID",
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
+// ===== SAFE START =====
+let coins = 0;
 
-// ===== USER =====
-const tgUser = (window.Telegram && Telegram.WebApp.initDataUnsafe?.user) || {};
-const userId = tgUser.id || "user_"+Math.floor(Math.random()*999999);
-const ref = new URLSearchParams(location.search).get("ref");
-
-// ===== DATA =====
-let coins=0, ads=0, level=1;
-
-// ===== CREATE USER =====
-function createUser(){
-  let r = db.ref("users/"+userId);
-
-  r.once("value",snap=>{
-    if(!snap.exists()){
-      let bonus=0;
-
-      if(ref && ref!==userId){
-        bonus=500;
-        db.ref("users/"+ref+"/coins").transaction(c=>(c||0)+500);
-      }
-
-      r.set({
-        coins:100+bonus,
-        ads:0,
-        level:1,
-        lastDaily:""
-      });
-    }
-  });
-}
-
-// ===== LISTEN =====
-function listen(){
-  db.ref("users/"+userId).on("value",snap=>{
-    let d=snap.val()||{};
-    coins=d.coins||0;
-    ads=d.ads||0;
-    level=d.level||1;
-    updateUI();
-  });
-}
-
-// ===== SAVE =====
-function save(){
-  db.ref("users/"+userId).update({coins,ads,level});
-}
-
-// ===== UI =====
-function updateUI(){
-  document.getElementById("coins").innerText=coins;
-  document.getElementById("ads").innerText=ads;
-  document.getElementById("level").innerText=level;
-}
-
-// ===== NAV =====
-window.nav=function(id,btn){
-  document.querySelectorAll(".page").forEach(p=>p.classList.remove("activePage"));
-  document.getElementById(id).classList.add("activePage");
-  document.querySelectorAll(".nav-btn").forEach(b=>b.classList.remove("active"));
-  btn.classList.add("active");
+// ===== TEST BUTTON =====
+function test(){
+  alert("✅ Button Working");
 }
 
 // ===== TAP =====
-window.tap=function(){
-  coins += (1 + level);
-  levelUp();
-  save();
+function tap(){
+  coins++;
+  update();
 }
 
-// ===== LEVEL =====
-function levelUp(){
-  let newLevel = Math.floor(coins/1000)+1;
-  if(newLevel>level){
-    level=newLevel;
-    alert("🔥 Level "+level);
-  }
+// ===== UPDATE =====
+function update(){
+  document.getElementById("coins").innerText = coins;
 }
 
 // ===== AD =====
-const AD_LINK="https://your-direct-link.com";
-
-window.watchAd=function(){
-  localStorage.setItem("ad_start",Date.now());
-  window.open(AD_LINK,"_blank");
+function watchAd(){
+  localStorage.setItem("ad_start", Date.now());
+  window.open("https://google.com","_blank");
 }
 
 // ===== VERIFY =====
-window.onfocus=function(){
-  let s=parseInt(localStorage.getItem("ad_start"));
-  if(!s)return;
+window.onfocus = function(){
 
-  let t=Date.now()-s;
+  let start = localStorage.getItem("ad_start");
+  if(!start) return;
+
+  let time = Date.now() - start;
   localStorage.removeItem("ad_start");
 
-  if(t>8000){
-    let r=100+Math.floor(Math.random()*200);
-    coins+=r;
-    ads++;
-    save();
-    alert("Earned "+r);
-
-    if(localStorage.getItem("spin")){
-      localStorage.removeItem("spin");
-      spin();
-    }
-
-  }else alert("Stay longer");
-}
+  if(time > 3000){
+    coins += 100;
+    update();
+    alert("Ad reward given");
+  }
+};
 
 // ===== DAILY =====
-window.dailyBonus=function(){
-  let today=new Date().toDateString();
-
-  db.ref("users/"+userId+"/lastDaily").once("value",snap=>{
-    let last=snap.val();
-
-    if(last===today){
-      alert("Already claimed");
-      return;
-    }
-
-    coins+=500;
-
-    db.ref("users/"+userId).update({
-      lastDaily:today,
-      coins:coins
-    });
-
-    alert("🎁 +500");
-  });
+function dailyBonus(){
+  coins += 500;
+  update();
+  alert("Daily added");
 }
 
-// ===== REF =====
-window.share=function(){
-  let link=location.origin+"?ref="+userId;
-  alert("Share this:\n"+link);
+// ===== FIREBASE SAFE INIT =====
+try {
+
+  const firebaseConfig = {
+    apiKey: "YOUR_KEY",
+    authDomain: "YOUR_DOMAIN",
+    databaseURL: "YOUR_DB_URL",
+    projectId: "YOUR_ID",
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+
+  console.log("🔥 Firebase Connected");
+
+} catch(e){
+  console.log("❌ Firebase Error:", e);
 }
 
-// ===== SPIN =====
-const canvas=document.getElementById("wheel");
-
-if(canvas){
-  const ctx=canvas.getContext("2d");
-  const rewards=[50,100,150,300,500];
-  const arc=(2*Math.PI)/rewards.length;
-
-  function draw(){
-    for(let i=0;i<rewards.length;i++){
-      ctx.beginPath();
-      ctx.fillStyle=i%2?"#ff00cc":"#330066";
-      ctx.moveTo(130,130);
-      ctx.arc(130,130,130,i*arc,(i+1)*arc);
-      ctx.fill();
-    }
-  }
-
-  draw();
-
-  window.spinAd=function(){
-    localStorage.setItem("spin","yes");
-    watchAd();
-  }
-
-  window.spin=function(){
-    let win=rewards[Math.floor(Math.random()*rewards.length)];
-    coins+=win;
-    save();
-    alert("🎰 Won "+win);
-  }
-}
-
-// INIT
-createUser();
-listen();
-
-};
 </script>
 
 </body>
