@@ -1,9 +1,8 @@
  <!DOCTYPE html>
 <html>
 <head>
-<title>Tap2Earn FINAL</title>
+<title>Tap2Earn PRO FINAL</title>
 
-<!-- Telegram SDK -->
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
 <style>
@@ -20,9 +19,9 @@ body{
 .activePage{display:block;}
 
 .tap{
-  width:150px;height:150px;
+  width:160px;height:160px;
   border-radius:50%;
-  background:#ff00cc;
+  background:radial-gradient(circle,#ff00cc,#330066);
   border:none;
   font-size:30px;
   color:white;
@@ -74,13 +73,8 @@ body{
 
   <button class="tap" id="tapBtn">🚀</button><br><br>
 
-  <!-- ✅ WORKING ADS BUTTON -->
-  <a href="<script src="https://pl29090077.profitablecpmratenetwork.com/da/eb/9f/daeb9f796ffdf6cbd8d4f44ec8e3ee3f.js"></script>
-" target="_blank" onclick="markAd()">
-    <button class="btn">🎁 Watch Ad</button>
-  </a>
-
-  <p>Ads Today: <span id="adCount">0</span>/20</p>
+  <button class="btn" onclick="watchAd()">🎁 Watch Ad</button>
+  <p>Ads Today: <span id="adCount">0</span></p>
 </div>
 
 <!-- SPIN -->
@@ -90,11 +84,7 @@ body{
     <canvas id="wheel" width="260" height="260"></canvas>
   </div>
   <br>
-
-  <!-- ✅ SPIN ALSO MONETIZED -->
-  <a href="https://www.profitableratecpm.com/xxxxx" target="_blank" onclick="markAd()">
-    <button class="btn">🎰 SPIN</button>
-  </a>
+  <button class="btn" onclick="spinAd()">🎰 Spin (Watch Ad)</button>
 </div>
 
 <!-- WALLET -->
@@ -111,17 +101,25 @@ body{
 </div>
 
 <script>
+
+// ===== CONFIG =====
+const AD_LINK = "https://www.profitableratecpm.com/xxxxx";
+const REWARD = 200;
+const MIN_TIME = 5000;
+
+// ===== DATA =====
 let coins = 0;
+let adStart = 0;
 let adCount = parseInt(localStorage.getItem("ad_count")) || 0;
 
-// UI
+// ===== UI =====
 function updateUI(){
   document.getElementById("coins").innerText = coins;
   document.getElementById("balance").innerText = (coins/100).toFixed(2);
   document.getElementById("adCount").innerText = adCount;
 }
 
-// NAV
+// ===== NAV =====
 function nav(id,btn){
   document.querySelectorAll(".page").forEach(p=>p.classList.remove("activePage"));
   document.getElementById(id).classList.add("activePage");
@@ -130,29 +128,63 @@ function nav(id,btn){
   btn.classList.add("active");
 }
 
-// TAP
+// ===== TAP =====
 document.getElementById("tapBtn").onclick = ()=>{
   coins++;
   updateUI();
 };
 
-// MARK AD CLICK
-function markAd(){
-  localStorage.setItem("auto_spin","yes");
-
-  adCount++;
-  localStorage.setItem("ad_count",adCount);
-}
-
-// AUTO RETURN
-function checkReturn(){
-  if(localStorage.getItem("auto_spin")=="yes"){
-    localStorage.removeItem("auto_spin");
-    setTimeout(()=>spin(),1000);
+// ===== OPEN AD =====
+function openAd(){
+  if(window.Telegram && Telegram.WebApp){
+    Telegram.WebApp.openLink(AD_LINK,{try_instant_view:false});
+  } else {
+    window.open(AD_LINK,"_blank");
   }
 }
 
-// SPIN SYSTEM
+// ===== WATCH AD =====
+function watchAd(){
+  adStart = Date.now();
+  localStorage.setItem("ad_start", adStart);
+  openAd();
+}
+
+// ===== SPIN WITH AD =====
+function spinAd(){
+  localStorage.setItem("auto_spin","yes");
+  watchAd();
+}
+
+// ===== VERIFY AFTER RETURN =====
+window.onfocus = function(){
+
+  let start = parseInt(localStorage.getItem("ad_start"));
+  if(!start) return;
+
+  let time = Date.now() - start;
+  localStorage.removeItem("ad_start");
+
+  if(time >= MIN_TIME){
+    coins += REWARD;
+    adCount++;
+    localStorage.setItem("ad_count",adCount);
+
+    updateUI();
+
+    alert("✅ Ad verified +"+REWARD);
+
+    if(localStorage.getItem("auto_spin")=="yes"){
+      localStorage.removeItem("auto_spin");
+      setTimeout(()=>spin(),1000);
+    }
+
+  } else {
+    alert("❌ Stay longer on ad");
+  }
+};
+
+// ===== SPIN SYSTEM =====
 const ctx = document.getElementById("wheel").getContext("2d");
 
 let spinning=false, angle=0;
@@ -228,7 +260,7 @@ function finish(index){
   alert("🎉 Won "+win);
 }
 
-// WITHDRAW
+// ===== WITHDRAW =====
 function withdraw(){
   if(coins<1000){
     alert("Min ₹10");
@@ -241,7 +273,7 @@ function withdraw(){
 
 // INIT
 updateUI();
-checkReturn();
+
 </script>
 
 </body>
