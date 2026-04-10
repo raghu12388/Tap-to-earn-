@@ -1,95 +1,231 @@
  <!DOCTYPE html>
 <html>
 <head>
-<title>Tap2Earn SAFE</title>
+<title>Tap2Earn PRO MAX</title>
 
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+<!-- Firebase v8 -->
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
 <style>
-body{background:black;color:white;text-align:center;font-family:sans-serif}
-.btn{padding:10px;margin:5px;background:#ff00cc;color:white;border:none;border-radius:10px}
+body{margin:0;background:#000;color:#fff;font-family:sans-serif;text-align:center;padding-bottom:80px}
+.page{display:none}
+.active{display:block}
+
+.tap{width:140px;height:140px;border-radius:50%;background:radial-gradient(circle,#ff00cc,#330066);border:none;font-size:28px;color:#fff}
+
+.btn{padding:10px 15px;margin:5px;border:none;border-radius:10px;background:#ff00cc;color:#fff}
+
+.footer{position:fixed;bottom:0;width:100%;height:60px;background:#111;display:flex;justify-content:space-around;align-items:center}
+.nav{background:none;border:none;color:#aaa}
+.nav.active{color:#ff00cc}
 </style>
 </head>
 
 <body>
 
-<h1>💰 <span id="coins">0</span></h1>
+<div id="home" class="page active">
+<h2>💰 <span id="coins">0</span></h2>
+<p>Level: <span id="level">1</span></p>
 
-<button class="btn" onclick="tap()">Tap</button>
+<button class="tap" onclick="tap()">🚀</button><br><br>
+
 <button class="btn" onclick="watchAd()">Watch Ad</button>
-<button class="btn" onclick="dailyBonus()">Daily</button>
-<button class="btn" onclick="test()">TEST</button>
+<button class="btn" onclick="daily()">Daily</button>
+<button class="btn" onclick="share()">Invite</button>
+</div>
+
+<div id="spinPage" class="page">
+<h3>🎰 Spin</h3>
+<button class="btn" onclick="spinAd()">Spin (Ad)</button>
+</div>
+
+<div class="footer">
+<button class="nav active" onclick="nav('home',this)">Home</button>
+<button class="nav" onclick="nav('spinPage',this)">Spin</button>
+</div>
 
 <script>
+window.onload = function(){
 
-// ===== SAFE START =====
-let coins = 0;
+// ===== CONFIG =====
+const AD_LINK = "YOUR_AD_LINK";
 
-// ===== TEST BUTTON =====
-function test(){
-  alert("✅ Button Working");
+// ===== FIREBASE SAFE =====
+let db=null;
+
+try{
+  firebase.initializeApp({
+    apiKey: "AIzaSyD3mNWujEZ8DpnCuz89wToiVrE9YvC-W7E",
+      authDomain: "tap2earn-4ef6d.firebaseapp.com",
+    databaseURL:"https://tap2earn-4ef6d-default-rtdb.firebaseio.com/",
+      projectId: "tap2earn-4ef6d",
+  });
+  db=firebase.database();
+}catch(e){
+  console.log("Firebase fail");
+}
+
+// ===== USER =====
+let tg = window.Telegram?.WebApp;
+let userId = tg?.initDataUnsafe?.user?.id || "user_"+Math.floor(Math.random()*999999);
+
+// referral
+let ref = new URLSearchParams(location.search).get("ref");
+
+// ===== DATA =====
+let coins=0, level=1, ads=0;
+
+// ===== LOAD =====
+function load(){
+  if(!db) return;
+
+  db.ref("users/"+userId).once("value",snap=>{
+    let d=snap.val();
+
+    if(!d){
+      let bonus=0;
+
+      if(ref && ref!==userId){
+        bonus=500;
+        db.ref("users/"+ref+"/coins").transaction(c=>(c||0)+500);
+      }
+
+      db.ref("users/"+userId).set({
+        coins:100+bonus,
+        level:1,
+        ads:0,
+        lastDaily:""
+      });
+
+    }else{
+      coins=d.coins||0;
+      level=d.level||1;
+      ads=d.ads||0;
+    }
+
+    update();
+  });
+}
+
+// ===== SAVE =====
+function save(){
+  if(!db) return;
+  db.ref("users/"+userId).update({coins,level,ads});
+}
+
+// ===== UI =====
+function update(){
+  document.getElementById("coins").innerText=coins;
+  document.getElementById("level").innerText=level;
+}
+
+// ===== NAV =====
+window.nav=function(id,btn){
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+
+  document.querySelectorAll(".nav").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
 }
 
 // ===== TAP =====
-function tap(){
-  coins++;
+window.tap=function(){
+  coins += (1 + level);
+  levelUp();
   update();
+  save();
 }
 
-// ===== UPDATE =====
-function update(){
-  document.getElementById("coins").innerText = coins;
+// ===== LEVEL =====
+function levelUp(){
+  let newLevel=Math.floor(coins/1000)+1;
+  if(newLevel>level){
+    level=newLevel;
+    alert("🔥 Level "+level);
+  }
+}
+
+// ===== DAILY =====
+window.daily=function(){
+  let today=new Date().toDateString();
+
+  if(!db){
+    coins+=500;
+    update();
+    return;
+  }
+
+  db.ref("users/"+userId+"/lastDaily").once("value",snap=>{
+    if(snap.val()===today){
+      alert("Already claimed");
+      return;
+    }
+
+    coins+=500;
+    save();
+
+    db.ref("users/"+userId).update({lastDaily:today});
+    alert("🎁 Daily +500");
+  });
 }
 
 // ===== AD =====
-function watchAd(){
-  localStorage.setItem("ad_start", Date.now());
-  window.open("https://google.com","_blank");
+window.watchAd=function(){
+  localStorage.setItem("ad_start",Date.now());
+  window.open(AD_LINK,"_blank");
 }
 
 // ===== VERIFY =====
-window.onfocus = function(){
+window.onfocus=function(){
+  let s=localStorage.getItem("ad_start");
+  if(!s) return;
 
-  let start = localStorage.getItem("ad_start");
-  if(!start) return;
-
-  let time = Date.now() - start;
+  let t=Date.now()-s;
   localStorage.removeItem("ad_start");
 
-  if(time > 3000){
-    coins += 100;
+  if(t>6000){
+    coins+=150;
+    ads++;
     update();
-    alert("Ad reward given");
-  }
-};
+    save();
+    alert("💰 Ad reward");
 
-// ===== DAILY =====
-function dailyBonus(){
-  coins += 500;
+    if(localStorage.getItem("spin")){
+      localStorage.removeItem("spin");
+      spin();
+    }
+
+  }else alert("Stay longer");
+}
+
+// ===== SPIN =====
+window.spinAd=function(){
+  localStorage.setItem("spin","yes");
+  watchAd();
+}
+
+window.spin=function(){
+  let rewards=[50,100,200,300,500];
+  let win=rewards[Math.floor(Math.random()*rewards.length)];
+  coins+=win;
   update();
-  alert("Daily added");
+  save();
+  alert("🎰 Won "+win);
 }
 
-// ===== FIREBASE SAFE INIT =====
-try {
-
-  const firebaseConfig = {
-    apiKey: "YOUR_KEY",
-    authDomain: "YOUR_DOMAIN",
-    databaseURL: "YOUR_DB_URL",
-    projectId: "YOUR_ID",
-  };
-
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.database();
-
-  console.log("🔥 Firebase Connected");
-
-} catch(e){
-  console.log("❌ Firebase Error:", e);
+// ===== REF =====
+window.share=function(){
+  let link=location.origin+"?ref="+userId;
+  alert("Invite:\n"+link);
 }
 
+// INIT
+load();
+
+};
 </script>
 
 </body>
