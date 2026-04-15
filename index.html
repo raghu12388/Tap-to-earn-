@@ -1,7 +1,7 @@
  <!DOCTYPE html>
 <html>
 <head>
-<title>Tap2Earn FINAL</title>
+<title>Tap2Earn PRO FINAL</title>
 
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
@@ -29,9 +29,9 @@ body{margin:0;background:#000;color:#fff;font-family:sans-serif;text-align:cente
 
 <button class="tap" onclick="tap()">🚀</button><br><br>
 
-<button class="btn" onclick="watchAd()">Watch Ad</button>
-<button class="btn" onclick="daily()">Daily</button>
-<button class="btn" onclick="share()">Invite</button>
+<button class="btn" onclick="watchAd()">🎁 Watch Ad</button>
+<button class="btn" onclick="daily()">🎁 Daily</button>
+<button class="btn" onclick="share()">📤 Invite</button>
 </div>
 
 <div id="spinPage" class="page">
@@ -46,11 +46,12 @@ body{margin:0;background:#000;color:#fff;font-family:sans-serif;text-align:cente
 </div>
 
 <script>
+window.onload = function(){
 
-// ===== 🔥 AD LINK =====
-const AD_LINK =https://www.profitablecpmratenetwork.com/v461hnp1f?key=1b701233666cb461a77abce620d8c1ae
+// ===== 🔥 YOUR AD LINK =====
+const AD_LINK = "https://www.profitablecpmratenetwork.com/v461hnp1f?key=1b701233666cb461a77abce620d8c1ae";
 
-// ===== 🔥 FIREBASE =====
+// ===== 🔥 FIREBASE CONFIG =====
 const firebaseConfig = {
   apiKey: "AIzaSyD3mNkuJEZ8DpnCuz89wToiVrE9YvC-W7E",
   authDomain: "tap2earn-4ef6d.firebaseapp.com",
@@ -68,6 +69,17 @@ let ref = new URLSearchParams(location.search).get("ref");
 
 // ===== DATA =====
 let coins=0, level=1, ads=0;
+
+// ===== UI =====
+function update(){
+document.getElementById("coins").innerText=coins;
+document.getElementById("level").innerText=level;
+}
+
+// ===== SAVE =====
+function save(){
+db.ref("users/"+userId).update({coins,level,ads});
+}
 
 // ===== LOAD =====
 function load(){
@@ -88,7 +100,6 @@ level:1,
 ads:0,
 lastDaily:""
 });
-
 }else{
 coins=d.coins||0;
 level=d.level||1;
@@ -99,19 +110,8 @@ update();
 });
 }
 
-// ===== SAVE =====
-function save(){
-db.ref("users/"+userId).update({coins,level,ads});
-}
-
-// ===== UI =====
-function update(){
-document.getElementById("coins").innerText=coins;
-document.getElementById("level").innerText=level;
-}
-
 // ===== NAV =====
-function nav(id,btn){
+window.nav=function(id,btn){
 document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
 document.getElementById(id).classList.add("active");
 
@@ -120,7 +120,7 @@ btn.classList.add("active");
 }
 
 // ===== TAP =====
-function tap(){
+window.tap=function(){
 coins += (1 + level);
 levelUp();
 update();
@@ -137,7 +137,7 @@ alert("🔥 Level "+level);
 }
 
 // ===== DAILY =====
-function daily(){
+window.daily=function(){
 let today=new Date().toDateString();
 
 db.ref("users/"+userId+"/lastDaily").once("value",snap=>{
@@ -153,8 +153,8 @@ alert("🎁 Daily +500");
 });
 }
 
-// ===== AD (FIXED FOR TELEGRAM) =====
-function watchAd(){
+// ===== 🔥 AD FIX (TELEGRAM SAFE) =====
+window.watchAd=function(){
 localStorage.setItem("ad_start",Date.now());
 
 if(window.Telegram && Telegram.WebApp){
@@ -189,15 +189,16 @@ alert("Stay longer");
 }
 }
 
-// ===== SPIN WHEEL =====
-const canvas=document.getElementById("wheel");
+// ===== 🎰 SPIN WHEEL =====
+const canvas = document.getElementById("wheel");
 
 if(canvas){
-const ctx=canvas.getContext("2d");
+const ctx = canvas.getContext("2d");
 const rewards=[50,100,200,300,500,1000];
 const arc=(2*Math.PI)/rewards.length;
 
 function draw(){
+ctx.clearRect(0,0,260,260);
 for(let i=0;i<rewards.length;i++){
 ctx.beginPath();
 ctx.fillStyle=i%2?"#ff00cc":"#330066";
@@ -213,7 +214,6 @@ ctx.fillText(rewards[i],80,10);
 ctx.restore();
 }
 }
-
 draw();
 
 window.spinAd=function(){
@@ -231,7 +231,7 @@ alert("🎰 You won "+win);
 }
 
 // ===== REF =====
-function share(){
+window.share=function(){
 let link=location.origin+"?ref="+userId;
 alert("Invite:\n"+link);
 }
@@ -239,6 +239,7 @@ alert("Invite:\n"+link);
 // INIT
 load();
 
+};
 </script>
 
 </body>
