@@ -1,44 +1,101 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
-<title>Tap2Earn PRO STABLE</title>
+<title>Tap2Earn PRO MAX</title>
 
+<!-- Telegram -->
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+<!-- Ads -->
 <script src="https://www.profitableratecpm.com/10880483.js"></script>
 
+<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
 <style>
 body{
 margin:0;
-font-family:sans-serif;
-background:linear-gradient(135deg,#0f0c29,#302b63,#24243e);
+font-family:'Poppins',sans-serif;
+background:linear-gradient(180deg,#1a0033,#000);
 color:white;
-text-align:center;
-padding-bottom:80px;
 }
+
+/* HEADER */
+.header{
+padding:15px;
+font-size:20px;
+display:flex;
+justify-content:space-between;
+}
+
+/* WALLET */
+.wallet{
+margin:15px;
+padding:20px;
+border-radius:20px;
+background:linear-gradient(135deg,#ff00cc,#6a00ff);
+box-shadow:0 0 30px rgba(255,0,200,0.5);
+}
+
+/* CARD */
+.card{
+margin:15px;
+padding:20px;
+border-radius:20px;
+background:rgba(255,255,255,0.08);
+}
+
+/* TAP */
+.tap{
+width:160px;height:160px;
+border-radius:50%;
+background:radial-gradient(circle,#ff00cc,#6a00ff);
+border:none;font-size:40px;color:white;
+box-shadow:0 0 50px #ff00cc;
+animation:pulse 1.5s infinite;
+}
+
+@keyframes pulse{
+0%{transform:scale(1)}
+50%{transform:scale(1.1)}
+100%{transform:scale(1)}
+}
+
+/* BUTTON */
+.btn{
+padding:12px 18px;
+margin:5px;
+border:none;
+border-radius:12px;
+background:linear-gradient(45deg,#ff00cc,#ff6600);
+color:white;
+font-weight:bold;
+}
+
+/* NAV */
+.footer{
+position:fixed;
+bottom:0;
+width:100%;
+background:#000;
+display:flex;
+justify-content:space-around;
+padding:10px;
+}
+
+.nav{
+color:#aaa;
+background:none;
+border:none;
+}
+
+.nav.active{
+color:#ff00cc;
+}
+
 .page{display:none}
 .active{display:block}
-
-.header{padding:15px;font-size:20px;background:rgba(255,255,255,0.05)}
-.card{margin:15px;padding:20px;border-radius:15px;background:rgba(255,255,255,0.08)}
-
-.tap{
-width:140px;height:140px;border-radius:50%;
-background:radial-gradient(circle,#ff00cc,#330066);
-border:none;font-size:30px;color:white;
-}
-
-.btn{padding:12px;margin:5px;border:none;border-radius:10px;background:#ff00cc;color:white}
-
-.footer{
-position:fixed;bottom:0;width:100%;
-background:#111;display:flex;justify-content:space-around;
-}
-
-.nav{background:none;border:none;color:#aaa}
-.nav.active{color:#ff00cc}
 </style>
 </head>
 
@@ -46,33 +103,46 @@ background:#111;display:flex;justify-content:space-around;
 
 <!-- HOME -->
 <div id="home" class="page active">
-<div class="header">💰 Tap2Earn PRO</div>
 
-<div class="card">
-<h2 id="coins">0 💰</h2>
+<div class="header">
+<span>🎮 Tap2Earn</span>
+<span id="user">👤</span>
+</div>
+
+<div class="wallet">
+<h2>₹ <span id="coins">0</span></h2>
 <p>Level: <span id="level">1</span></p>
 </div>
 
-<div class="card">
+<div class="card" style="text-align:center">
 <button class="tap" onclick="tap()">🚀</button>
 </div>
 
 <div class="card">
-<button class="btn" onclick="watchAd()">Watch Ad</button>
-<button class="btn" onclick="daily()">Daily</button>
+<button class="btn" onclick="watchAd()">🎁 Watch Ad</button>
+<button class="btn" onclick="daily()">🎁 Daily</button>
+<button class="btn" onclick="spinAd()">🎰 Spin</button>
 </div>
+
 </div>
 
 <!-- SPIN -->
 <div id="spinPage" class="page">
-<div class="header">🎰 Spin</div>
 
-<div class="card" style="position:relative">
-<div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%)">🔻</div>
+<div class="header">🎰 Spin Game</div>
+
+<div class="card" style="text-align:center;position:relative">
+
+<div style="position:absolute;top:-15px;left:50%;transform:translateX(-50%)">🔻</div>
+
 <canvas id="wheel" width="260" height="260"></canvas>
+
 </div>
 
-<button class="btn" onclick="spinAd()">Spin</button>
+<div class="card">
+<button class="btn" onclick="spinAd()">🎰 Spin Now</button>
+</div>
+
 </div>
 
 <!-- NAV -->
@@ -85,7 +155,7 @@ background:#111;display:flex;justify-content:space-around;
 document.addEventListener("DOMContentLoaded", function(){
 
 // ===== CONFIG =====
-const AD_LINK = "https://omg10.com/4/10880497";
+const AD_LINK="https://omg10.com/4/10880497";
 
 // ===== FIREBASE =====
 firebase.initializeApp({
@@ -94,19 +164,24 @@ authDomain:"tap2earn-4ef6d.firebaseapp.com",
 databaseURL:"https://tap2earn-4ef6d-default-rtdb.firebaseio.com/",
 projectId:"tap2earn-4ef6d"
 });
-const db = firebase.database();
+const db=firebase.database();
 
 // ===== USER =====
-let userId = "user_" + Math.floor(Math.random()*999999);
+let tg=window.Telegram?.WebApp;
+let userId="user_"+Math.floor(Math.random()*999999);
+
+if(tg && tg.initDataUnsafe?.user){
+userId=tg.initDataUnsafe.user.id;
+document.getElementById("user").innerText="👤 "+tg.initDataUnsafe.user.first_name;
+}
 
 // ===== DATA =====
-let coins = 0;
-let level = 1;
+let coins=0,level=1;
 
 // ===== UI =====
 function update(){
-document.getElementById("coins").innerText = coins + " 💰";
-document.getElementById("level").innerText = level;
+document.getElementById("coins").innerText=coins;
+document.getElementById("level").innerText=level;
 }
 
 // ===== LOAD =====
@@ -129,31 +204,27 @@ db.ref("users/"+userId).update({coins,level});
 }
 
 // ===== TAP =====
-window.tap = function(){
+window.tap=function(){
 coins++;
 update();
 save();
 }
 
 // ===== DAILY =====
-window.daily = function(){
-coins += 500;
+window.daily=function(){
+coins+=500;
 update();
 save();
-alert("Daily Reward");
+alert("🎁 Daily reward");
 }
 
 // ===== ADS =====
-window.watchAd = function(){
-localStorage.setItem("ad_start", Date.now());
+window.watchAd=function(){
+localStorage.setItem("ad_start",Date.now());
 
-if(typeof show_10880483 === "function"){
-show_10880483('pop')
-.then(()=>reward())
-.catch(()=>openAd());
-}else{
-openAd();
-}
+if(typeof show_10880483==="function"){
+show_10880483('pop').then(()=>reward()).catch(()=>openAd());
+}else openAd();
 }
 
 function openAd(){
@@ -165,45 +236,50 @@ window.open(AD_LINK,"_blank");
 }
 
 function reward(){
-let r = Math.floor(Math.random()*200)+100;
-coins += r;
+let r=Math.floor(Math.random()*200)+100;
+coins+=r;
 update();
 save();
-alert("Earned " + r);
+alert("💰 Earned "+r);
+
+if(localStorage.getItem("spin")){
+localStorage.removeItem("spin");
+spin();
+}
 }
 
 // VERIFY RETURN
-window.onfocus = function(){
-let s = localStorage.getItem("ad_start");
-if(!s) return;
+window.onfocus=function(){
+let s=localStorage.getItem("ad_start");
+if(!s)return;
 
-let t = Date.now()-s;
+let t=Date.now()-s;
 localStorage.removeItem("ad_start");
 
 if(t>6000) reward();
 }
 
 // ===== NAV =====
-window.nav = function(id,btn){
+window.nav=function(id,btn){
 document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
 document.getElementById(id).classList.add("active");
 }
 
-// ===== 🎰 SPIN SYSTEM =====
-const canvas = document.getElementById("wheel");
-const ctx = canvas.getContext("2d");
+// ===== 🎰 SPIN =====
+const canvas=document.getElementById("wheel");
+const ctx=canvas.getContext("2d");
 
-const rewards = [50,100,200,300,500];
-const arc = (2*Math.PI)/rewards.length;
+const rewards=[50,100,200,300,500];
+const arc=(2*Math.PI)/rewards.length;
 
-let angle = 0;
-let spinning = false;
+let angle=0;
+let spinning=false;
 
 function draw(){
 ctx.clearRect(0,0,260,260);
 for(let i=0;i<rewards.length;i++){
 ctx.beginPath();
-ctx.fillStyle=i%2?"#ff00cc":"#330066";
+ctx.fillStyle=i%2?"#ff00cc":"#6a00ff";
 ctx.moveTo(130,130);
 ctx.arc(130,130,130,i*arc,(i+1)*arc);
 ctx.fill();
@@ -218,7 +294,7 @@ ctx.restore();
 }
 draw();
 
-window.spin = function(){
+window.spin=function(){
 if(spinning) return;
 spinning=true;
 
@@ -259,10 +335,10 @@ let win=rewards[i];
 coins+=win;
 update();
 save();
-alert("Won "+win);
+alert("🎰 Won "+win);
 }
 
-window.spinAd = function(){
+window.spinAd=function(){
 localStorage.setItem("spin","yes");
 watchAd();
 }
