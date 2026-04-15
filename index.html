@@ -1,268 +1,169 @@
  <!DOCTYPE html>
 <html>
 <head>
-<title>Tap2Earn PRO MAX</title>
-
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<title>Tap2Earn FINAL</title>
 
 <style>
 body{
-margin:0;
-font-family:'Poppins',sans-serif;
+margin:0;font-family:sans-serif;
 background:linear-gradient(180deg,#0f0c29,#302b63,#000);
-color:white;
+color:white;text-align:center;
 }
-
-/* LOADER */
-#loader{
-position:fixed;width:100%;height:100%;
-background:#000;display:flex;
-align-items:center;justify-content:center;
-z-index:9999;flex-direction:column;
-}
-.loader{
-width:60px;height:60px;border:5px solid #333;
-border-top:5px solid #ff00cc;border-radius:50%;
-animation:spin 1s linear infinite;
-}
-@keyframes spin{100%{transform:rotate(360deg)}}
-
-/* UI */
-.header{padding:15px;font-size:20px;display:flex;justify-content:space-between}
-.wallet{margin:15px;padding:20px;border-radius:20px;background:linear-gradient(135deg,#ff00cc,#6a00ff)}
-.card{margin:15px;padding:20px;border-radius:20px;background:rgba(255,255,255,0.08)}
-
-.tap{
-width:160px;height:160px;border-radius:50%;
-background:radial-gradient(circle,#ff00cc,#6a00ff);
-border:none;font-size:40px;color:white;
-animation:pulse 1.5s infinite;
-}
-@keyframes pulse{50%{transform:scale(1.1)}}
-
-.btn{
-padding:12px;margin:5px;border:none;border-radius:10px;
-background:linear-gradient(45deg,#ff00cc,#ff6600);
-color:white;
-}
-
-.footer{
-position:fixed;bottom:0;width:100%;
-background:#000;display:flex;justify-content:space-around;
-}
-
+.card{margin:15px;padding:20px;border-radius:15px;background:rgba(255,255,255,0.08)}
+.tap{width:140px;height:140px;border-radius:50%;background:#ff00cc;color:white;border:none;font-size:30px}
+.btn{padding:10px;margin:5px;border:none;border-radius:10px;background:#ff00cc;color:white}
+.footer{position:fixed;bottom:0;width:100%;background:#000;display:flex;justify-content:space-around}
 .page{display:none}
 .active{display:block}
+
+/* progress */
+.progress{width:80%;height:10px;background:#333;margin:auto;border-radius:10px}
+.bar{height:100%;width:0%;background:#ff00cc}
 </style>
 </head>
 
 <body>
 
-<!-- LOADER -->
-<div id="loader">
-<h2 style="color:#ff00cc;">Loading...</h2>
-<div class="loader"></div>
-</div>
-
-<!-- SOUND -->
-<audio id="spinSound" src="https://www.soundjay.com/mechanical/sounds/slot-machine-1.mp3"></audio>
-<audio id="winSound" src="https://www.soundjay.com/misc/sounds/coin-drop-1.mp3"></audio>
-
-<!-- HOME -->
 <div id="home" class="page active">
-<div class="header">
-<span>🎮 Tap2Earn</span>
-<span id="user">👤</span>
-</div>
 
-<div class="wallet">
-<h2>₹ <span id="coins">0</span></h2>
+<div class="card">
+<h2>💰 <span id="coins">0</span></h2>
 <p>Level: <span id="level">1</span></p>
+
+<div class="progress"><div id="bar" class="bar"></div></div>
+<p>XP: <span id="xp">0</span>/<span id="need">100</span></p>
 </div>
 
-<div class="card" style="text-align:center">
+<div class="card">
 <button class="tap" onclick="tap()">🚀</button>
 </div>
 
 <div class="card">
-<button class="btn" onclick="watchAd()">Watch Ad</button>
-<button class="btn" onclick="daily()">Daily</button>
-<button class="btn" onclick="spinAd()">Spin</button>
-<button class="btn" onclick="invite()">Invite</button>
-</div>
+<button class="btn" onclick="watchAd()">💰 Ad</button>
+<button class="btn" onclick="spin()">🎰 Spin</button>
+<button class="btn" onclick="daily()">🎁 Daily</button>
+<button class="btn" onclick="invite()">📤 Invite</button>
+<button class="btn" onclick="claimMission()">🎯 Claim</button>
 </div>
 
-<!-- SPIN -->
+</div>
+
 <div id="spinPage" class="page">
-<div class="header">🎰 Spin</div>
-
-<div class="card" style="position:relative;text-align:center">
-<div style="position:absolute;top:-15px;left:50%;transform:translateX(-50%)">🔻</div>
+<div class="card">
 <canvas id="wheel" width="260" height="260"></canvas>
 </div>
-
-<button class="btn" onclick="spinAd()">Spin Now</button>
 </div>
 
-<!-- DASHBOARD -->
-<div id="dashboardPage" class="page">
-<div class="header">📊 Dashboard</div>
-
-<div class="card"><h3>Coins</h3><h2 id="dashCoins">0</h2></div>
-<div class="card"><h3>Ads</h3><h2 id="dashAds">0</h2></div>
-
-<div class="card">
+<div id="dash" class="page">
+<div class="card"><h3>Coins</h3><h2 id="dCoins">0</h2></div>
+<div class="card"><h3>Ads</h3><h2 id="dAds">0</h2></div>
 <canvas id="chart" width="300" height="150"></canvas>
 </div>
-</div>
 
-<!-- NAV -->
 <div class="footer">
 <button onclick="nav('home')">Home</button>
 <button onclick="nav('spinPage')">Spin</button>
-<button onclick="nav('dashboardPage')">📊</button>
+<button onclick="nav('dash')">📊</button>
 </div>
 
 <script>
-document.addEventListener("DOMContentLoaded",function(){
-
-// LOADER
-setTimeout(()=>loader.style.display="none",1500);
-
-// ADS
-const ADS=[
-"https://omg10.com/4/10880497",
-"https://www.profitablecpmratenetwork.com/v461hnp1f?key=1b701233666cb461a77abce620d8c1ae"
-];
-function getAd(){return ADS[Math.floor(Math.random()*ADS.length)];}
-
-// FIREBASE
-firebase.initializeApp({
-apiKey:"AIzaSy...",
-authDomain:"tap2earn-4ef6d.firebaseapp.com",
-databaseURL:"https://tap2earn-4ef6d-default-rtdb.firebaseio.com/",
-projectId:"tap2earn-4ef6d"
-});
-const db=firebase.database();
-
-// USER
-let tg=window.Telegram?.WebApp;
-let userId="user_"+Math.floor(Math.random()*999999);
-let ref=new URLSearchParams(location.search).get("ref");
-
-if(tg && tg.initDataUnsafe?.user){
-userId=tg.initDataUnsafe.user.id;
-user.innerText="👤 "+tg.initDataUnsafe.user.first_name;
-}
 
 // DATA
-let coins=0,level=1;
-
-// LOAD
-function load(){
-db.ref("users/"+userId).once("value",snap=>{
-let d=snap.val();
-if(!d){
-let bonus=0;
-if(ref && ref!==userId){
-bonus=500;
-db.ref("users/"+ref+"/coins").transaction(c=>(c||0)+500);
-}
-db.ref("users/"+userId).set({coins:100+bonus});
-}else coins=d.coins||0;
-update();
-});
-}
-
-// SAVE
-function save(){
-db.ref("users/"+userId).update({coins});
-}
+let coins=0,level=1,xp=0,need=100;
 
 // UPDATE
 function update(){
 coinsEl.innerText=coins;
-dashCoins.innerText=coins;
+levelEl.innerText=level;
+xpEl.innerText=xp;
+needEl.innerText=need;
+bar.style.width=(xp/need*100)+"%";
 
-let ads=localStorage.getItem("ads")||0;
-dashAds.innerText=ads;
+dCoins.innerText=coins;
+dAds.innerText=localStorage.getItem("ads")||0;
+}
+
+// XP
+function addXP(v){
+xp+=v;
+if(xp>=need){
+xp=0;level++;need+=50;
+alert("Level Up!");
+}
 }
 
 // TAP
-window.tap=function(){
-coins++;
-update();
-save();
+function tap(){
+coins++;addXP(5);update();
 }
 
 // DAILY
-window.daily=function(){
-coins+=500;
-update();
-save();
+function daily(){
+coins+=500;addXP(50);update();
 }
 
-// WATCH AD
-window.watchAd=function(){
+// ADS
+function watchAd(){
 localStorage.setItem("ad_start",Date.now());
-let link=getAd();
-
-if(window.Telegram){
-Telegram.WebApp.openLink(link);
-}else window.location.href=link;
+window.open("https://omg10.com/4/10880497");
 }
 
 // VERIFY
 window.onfocus=function(){
 let s=localStorage.getItem("ad_start");
 if(!s)return;
+if(Date.now()-s>5000){
+coins+=100;addXP(20);
 
-let t=Date.now()-s;
-localStorage.removeItem("ad_start");
+let a=parseInt(localStorage.getItem("ads")||0)+1;
+localStorage.setItem("ads",a);
 
-if(t>8000){
-coins+=100;
-
-let ads=parseInt(localStorage.getItem("ads")||0)+1;
-localStorage.setItem("ads",ads);
+track("ad");
 
 update();
-save();
+}
+}
 
-if(localStorage.getItem("spin")){
-localStorage.removeItem("spin");
-spin();
+// MISSIONS
+function track(t){
+let m=JSON.parse(localStorage.getItem("m")||'{"ad":0,"spin":0}');
+m[t]++;localStorage.setItem("m",JSON.stringify(m));
 }
+
+function claimMission(){
+let m=JSON.parse(localStorage.getItem("m")||'{"ad":0,"spin":0}');
+if(m.ad>=3||m.spin>=2){
+coins+=300;localStorage.removeItem("m");
+alert("Mission Done!");
+update();
+}else alert("Not complete");
 }
+
+// INVITE
+function invite(){
+let link=location.href+"?ref=123";
+navigator.clipboard.writeText(link);
+alert("Copied!");
 }
 
 // NAV
-window.nav=function(id){
+function nav(id){
 document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
 document.getElementById(id).classList.add("active");
+if(id==="spinPage") draw();
 }
 
-// 🎰 3D SPIN
+// SPIN
 const canvas=document.getElementById("wheel");
 const ctx=canvas.getContext("2d");
-
-const rewards=[50,100,200,300,500,1000];
-const arc=(2*Math.PI)/rewards.length;
-
-let angle=0,spinning=false;
+const r=[50,100,200,300];
+const arc=2*Math.PI/r.length;
 
 function draw(){
 ctx.clearRect(0,0,260,260);
-
-for(let i=0;i<rewards.length;i++){
-let grad=ctx.createLinearGradient(0,0,260,260);
-grad.addColorStop(0,i%2?"#ff00cc":"#6a00ff");
-grad.addColorStop(1,"#000");
-
+for(let i=0;i<r.length;i++){
 ctx.beginPath();
-ctx.fillStyle=grad;
+ctx.fillStyle=i%2?"#ff00cc":"#6a00ff";
 ctx.moveTo(130,130);
 ctx.arc(130,130,130,i*arc,(i+1)*arc);
 ctx.fill();
@@ -271,93 +172,41 @@ ctx.save();
 ctx.translate(130,130);
 ctx.rotate(i*arc+arc/2);
 ctx.fillStyle="white";
-ctx.fillText(rewards[i],80,5);
+ctx.fillText(r[i],80,10);
 ctx.restore();
 }
 }
-draw();
 
-window.spin=function(){
-
-if(spinning)return;
-spinning=true;
-
-spinSound.play();
-if(navigator.vibrate)navigator.vibrate([200,100,200]);
-
-let i=Math.floor(Math.random()*rewards.length);
-let target=(Math.PI*2)-(i*arc)-arc/2;
-let final=angle+Math.PI*6+target;
-
-let start=null;
-
-function animate(t){
-if(!start)start=t;
-let p=(t-start)/3000;
-if(p>1)p=1;
-
-let current=angle+(final-angle)*(1-Math.pow(1-p,4));
-
-ctx.clearRect(0,0,260,260);
-ctx.save();
-ctx.translate(130,130);
-ctx.rotate(current);
-ctx.translate(-130,-130);
-draw();
-ctx.restore();
-
-if(p<1){
-requestAnimationFrame(animate);
-}else{
-angle=final%(Math.PI*2);
-finish(i);
-}
-}
-requestAnimationFrame(animate);
-}
-
-function finish(i){
-spinning=false;
-
-let win=rewards[i];
-coins+=win;
+function spin(){
+let win=r[Math.floor(Math.random()*r.length)];
+coins+=win;addXP(30);
+track("spin");
 update();
-save();
-
-winSound.play();
-alert("🎉 You won "+win);
-}
-
-window.spinAd=function(){
-localStorage.setItem("spin","yes");
-watchAd();
-}
-
-// INVITE
-window.invite=function(){
-let link=location.origin+"?ref="+userId;
-navigator.clipboard.writeText(link);
-alert("Invite link copied!");
+alert("Won "+win);
 }
 
 // GRAPH
-function drawChart(){
+function chart(){
 let c=document.getElementById("chart").getContext("2d");
 c.beginPath();
 c.moveTo(0,100);
 c.lineTo(50,80);
 c.lineTo(100,60);
-c.lineTo(150,40);
-c.lineTo(200,30);
 c.strokeStyle="#ff00cc";
 c.stroke();
 }
-drawChart();
 
 // INIT
-load();
+let coinsEl=document.getElementById("coins");
+let levelEl=document.getElementById("level");
+let xpEl=document.getElementById("xp");
+let needEl=document.getElementById("need");
+let bar=document.getElementById("bar");
+let dCoins=document.getElementById("dCoins");
+let dAds=document.getElementById("dAds");
 
-});
+draw();chart();update();
+
 </script>
 
 </body>
