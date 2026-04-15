@@ -1,25 +1,65 @@
  <!DOCTYPE html>
 <html>
 <head>
-<title>Tap2Earn Viral</title>
+<title>Tap2Earn PRO MAX</title>
 
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
 <style>
 body{
 margin:0;
-font-family:sans-serif;
-background:linear-gradient(180deg,#1a0033,#000);
+font-family:'Poppins',sans-serif;
+background:linear-gradient(180deg,#0f0c29,#302b63,#000);
 color:white;
-text-align:center;
 }
-.card{margin:15px;padding:20px;border-radius:15px;background:rgba(255,255,255,0.08)}
-.btn{padding:12px;margin:5px;border:none;border-radius:10px;background:#ff00cc;color:white}
-.tap{width:140px;height:140px;border-radius:50%;background:#ff00cc;color:white;border:none;font-size:30px}
-.footer{position:fixed;bottom:0;width:100%;background:#000;display:flex;justify-content:space-around}
+
+/* LOADER */
+#loader{
+position:fixed;
+width:100%;
+height:100%;
+background:#000;
+display:flex;
+flex-direction:column;
+align-items:center;
+justify-content:center;
+z-index:9999;
+}
+.loader-circle{
+width:60px;height:60px;
+border:5px solid #333;
+border-top:5px solid #ff00cc;
+border-radius:50%;
+animation:spin 1s linear infinite;
+}
+@keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+
+/* UI */
+.header{padding:15px;font-size:20px;display:flex;justify-content:space-between}
+.wallet{margin:15px;padding:20px;border-radius:20px;background:linear-gradient(135deg,#ff00cc,#6a00ff)}
+.card{margin:15px;padding:20px;border-radius:20px;background:rgba(255,255,255,0.08)}
+
+.tap{
+width:160px;height:160px;border-radius:50%;
+background:radial-gradient(circle,#ff00cc,#6a00ff);
+border:none;font-size:40px;color:white;
+animation:pulse 1.5s infinite;
+}
+@keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.1)}100%{transform:scale(1)}}
+
+.btn{
+padding:12px;margin:5px;border:none;border-radius:10px;
+background:linear-gradient(45deg,#ff00cc,#ff6600);
+color:white;
+}
+
+.footer{
+position:fixed;bottom:0;width:100%;
+background:#000;display:flex;justify-content:space-around;
+}
+
 .page{display:none}
 .active{display:block}
 </style>
@@ -27,50 +67,82 @@ text-align:center;
 
 <body>
 
+<!-- LOADER -->
+<div id="loader">
+<h2 style="color:#ff00cc;">Loading...</h2>
+<div class="loader-circle"></div>
+</div>
+
+<!-- HOME -->
 <div id="home" class="page active">
 
-<div class="card">
-<h2>💰 <span id="coins">0</span></h2>
+<div class="header">
+<span>🎮 Tap2Earn</span>
+<span id="user">👤</span>
+</div>
+
+<div class="wallet">
+<h2>₹ <span id="coins">0</span></h2>
 <p>Level: <span id="level">1</span></p>
 </div>
 
-<div class="card">
+<div class="card" style="text-align:center">
 <button class="tap" onclick="tap()">🚀</button>
 </div>
 
 <div class="card">
 <button class="btn" onclick="watchAd()">Watch Ad</button>
 <button class="btn" onclick="daily()">Daily</button>
-<button class="btn" onclick="invite()">Invite</button>
 <button class="btn" onclick="spinAd()">Spin</button>
+<button class="btn" onclick="invite()">Invite</button>
 </div>
 
 </div>
 
+<!-- SPIN -->
 <div id="spinPage" class="page">
-<div class="card">
+<div class="header">🎰 Spin</div>
+
+<div class="card" style="position:relative;text-align:center">
+<div style="position:absolute;top:-15px;left:50%;transform:translateX(-50%)">🔻</div>
 <canvas id="wheel" width="260" height="260"></canvas>
 </div>
-<button class="btn" onclick="spinAd()">Spin</button>
+
+<button class="btn" onclick="spinAd()">Spin Now</button>
 </div>
 
+<!-- DASHBOARD -->
+<div id="dashboardPage" class="page">
+<div class="header">📊 Dashboard</div>
+
+<div class="card"><h3>Coins</h3><h2 id="dashCoins">0</h2></div>
+<div class="card"><h3>Ads</h3><h2 id="dashAds">0</h2></div>
+<div class="card"><h3>Level</h3><h2 id="dashLevel">1</h2></div>
+
+<div class="card">
+<canvas id="chart" width="300" height="150"></canvas>
+</div>
+</div>
+
+<!-- NAV -->
 <div class="footer">
 <button onclick="nav('home')">Home</button>
 <button onclick="nav('spinPage')">Spin</button>
+<button onclick="nav('dashboardPage')">📊</button>
 </div>
 
 <script>
-document.addEventListener("DOMContentLoaded", function(){
+document.addEventListener("DOMContentLoaded",function(){
 
-// 🔥 MULTI ADS
+// LOADER
+setTimeout(()=>document.getElementById("loader").style.display="none",1500);
+
+// MULTI ADS
 const ADS=[
 "https://omg10.com/4/10880497",
 "https://www.profitablecpmratenetwork.com/v461hnp1f?key=1b701233666cb461a77abce620d8c1ae"
 ];
-
-function getAd(){
-return ADS[Math.floor(Math.random()*ADS.length)];
-}
+function getAd(){return ADS[Math.floor(Math.random()*ADS.length)];}
 
 // FIREBASE
 firebase.initializeApp({
@@ -88,6 +160,7 @@ let ref=new URLSearchParams(location.search).get("ref");
 
 if(tg && tg.initDataUnsafe?.user){
 userId=tg.initDataUnsafe.user.id;
+document.getElementById("user").innerText="👤 "+tg.initDataUnsafe.user.first_name;
 }
 
 // DATA
@@ -97,26 +170,17 @@ let coins=0,level=1;
 function load(){
 db.ref("users/"+userId).once("value",snap=>{
 let d=snap.val();
-
 if(!d){
-
 let bonus=0;
-
 if(ref && ref!==userId){
 bonus=500;
 db.ref("users/"+ref+"/coins").transaction(c=>(c||0)+500);
 }
-
-db.ref("users/"+userId).set({
-coins:100+bonus,
-level:1
-});
-
+db.ref("users/"+userId).set({coins:100+bonus,level:1});
 }else{
 coins=d.coins||0;
 level=d.level||1;
 }
-
 update();
 });
 }
@@ -126,10 +190,16 @@ function save(){
 db.ref("users/"+userId).update({coins,level});
 }
 
-// UI
+// UPDATE UI
 function update(){
 document.getElementById("coins").innerText=coins;
 document.getElementById("level").innerText=level;
+
+document.getElementById("dashCoins").innerText=coins;
+document.getElementById("dashLevel").innerText=level;
+
+let ads=localStorage.getItem("ads")||0;
+document.getElementById("dashAds").innerText=ads;
 }
 
 // TAP
@@ -146,20 +216,16 @@ update();
 save();
 }
 
-// 🎯 COOLDOWN
+// COOLDOWN
 function canAd(){
 let last=localStorage.getItem("ad");
-if(!last)return true;
-return Date.now()-last>30000;
+return !last || Date.now()-last>30000;
 }
 
-// ADS
+// WATCH AD
 window.watchAd=function(){
 
-if(!canAd()){
-alert("Wait 30 sec");
-return;
-}
+if(!canAd()){alert("Wait 30 sec");return;}
 
 localStorage.setItem("ad",Date.now());
 localStorage.setItem("ad_start",Date.now());
@@ -175,7 +241,6 @@ window.location.href=link;
 
 // VERIFY
 window.onfocus=function(){
-
 let s=localStorage.getItem("ad_start");
 if(!s)return;
 
@@ -183,21 +248,27 @@ let t=Date.now()-s;
 localStorage.removeItem("ad_start");
 
 if(t>8000){
-
 let r=[50,100,150,200][Math.floor(Math.random()*4)];
-
 coins+=r;
+
+let ads=parseInt(localStorage.getItem("ads")||0);
+ads++;
+localStorage.setItem("ads",ads);
+
 update();
 save();
-
-alert("Earned "+r);
 
 if(localStorage.getItem("spin")){
 localStorage.removeItem("spin");
 spin();
 }
-
 }
+}
+
+// NAV
+window.nav=function(id){
+document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+document.getElementById(id).classList.add("active");
 }
 
 // 🎰 SPIN
@@ -208,6 +279,7 @@ const rewards=[50,100,200,300];
 const arc=(2*Math.PI)/rewards.length;
 
 function draw(){
+ctx.clearRect(0,0,260,260);
 for(let i=0;i<rewards.length;i++){
 ctx.beginPath();
 ctx.fillStyle=i%2?"#ff00cc":"#330066";
@@ -238,20 +310,19 @@ localStorage.setItem("spin","yes");
 watchAd();
 }
 
-// 🚀 VIRAL INVITE
-window.invite=function(){
-let link=location.origin+"?ref="+userId;
-
-navigator.clipboard.writeText(link);
-
-alert("Invite link copied!\n"+link);
+// GRAPH
+function drawChart(){
+let ctx=document.getElementById("chart").getContext("2d");
+ctx.beginPath();
+ctx.moveTo(0,100);
+ctx.lineTo(50,80);
+ctx.lineTo(100,60);
+ctx.lineTo(150,40);
+ctx.lineTo(200,30);
+ctx.strokeStyle="#ff00cc";
+ctx.stroke();
 }
-
-// NAV
-window.nav=function(id){
-document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
-document.getElementById(id).classList.add("active");
-}
+drawChart();
 
 // INIT
 load();
