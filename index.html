@@ -1,58 +1,32 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html>
 <head>
 <title>Tap2Earn PRO MAX</title>
 
-<!-- Telegram -->
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
-<!-- Ads -->
 <script src="https://www.profitableratecpm.com/10880483.js"></script>
 
-<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
 <style>
 body{
 margin:0;
-font-family:'Poppins',sans-serif;
+font-family:sans-serif;
 background:linear-gradient(180deg,#1a0033,#000);
 color:white;
+text-align:center;
 }
 
-/* HEADER */
-.header{
-padding:15px;
-font-size:20px;
-display:flex;
-justify-content:space-between;
-}
+/* UI */
+.header{padding:15px;font-size:20px}
+.wallet{margin:15px;padding:20px;border-radius:20px;background:linear-gradient(135deg,#ff00cc,#6a00ff)}
+.card{margin:15px;padding:20px;border-radius:20px;background:rgba(255,255,255,0.08)}
 
-/* WALLET */
-.wallet{
-margin:15px;
-padding:20px;
-border-radius:20px;
-background:linear-gradient(135deg,#ff00cc,#6a00ff);
-box-shadow:0 0 30px rgba(255,0,200,0.5);
-}
-
-/* CARD */
-.card{
-margin:15px;
-padding:20px;
-border-radius:20px;
-background:rgba(255,255,255,0.08);
-}
-
-/* TAP */
 .tap{
-width:160px;height:160px;
-border-radius:50%;
+width:160px;height:160px;border-radius:50%;
 background:radial-gradient(circle,#ff00cc,#6a00ff);
 border:none;font-size:40px;color:white;
-box-shadow:0 0 50px #ff00cc;
 animation:pulse 1.5s infinite;
 }
 
@@ -62,36 +36,14 @@ animation:pulse 1.5s infinite;
 100%{transform:scale(1)}
 }
 
-/* BUTTON */
 .btn{
-padding:12px 18px;
-margin:5px;
-border:none;
-border-radius:12px;
-background:linear-gradient(45deg,#ff00cc,#ff6600);
-color:white;
-font-weight:bold;
+padding:12px;margin:5px;border:none;border-radius:10px;
+background:linear-gradient(45deg,#ff00cc,#ff6600);color:white;
 }
 
-/* NAV */
 .footer{
-position:fixed;
-bottom:0;
-width:100%;
-background:#000;
-display:flex;
-justify-content:space-around;
-padding:10px;
-}
-
-.nav{
-color:#aaa;
-background:none;
-border:none;
-}
-
-.nav.active{
-color:#ff00cc;
+position:fixed;bottom:0;width:100%;
+background:#000;display:flex;justify-content:space-around;
 }
 
 .page{display:none}
@@ -101,179 +53,133 @@ color:#ff00cc;
 
 <body>
 
+<!-- 🔊 SOUND -->
+<audio id="spinSound" src="https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3"></audio>
+<audio id="winSound" src="https://www.soundjay.com/misc/sounds/coin-drop-1.mp3"></audio>
+
 <!-- HOME -->
 <div id="home" class="page active">
-
-<div class="header">
-<span>🎮 Tap2Earn</span>
-<span id="user">👤</span>
-</div>
+<div class="header">🎮 Tap2Earn</div>
 
 <div class="wallet">
 <h2>₹ <span id="coins">0</span></h2>
 <p>Level: <span id="level">1</span></p>
 </div>
 
-<div class="card" style="text-align:center">
+<div class="card">
 <button class="tap" onclick="tap()">🚀</button>
 </div>
 
 <div class="card">
-<button class="btn" onclick="watchAd()">🎁 Watch Ad</button>
-<button class="btn" onclick="daily()">🎁 Daily</button>
-<button class="btn" onclick="spinAd()">🎰 Spin</button>
+<button class="btn" onclick="watchAd()">Watch Ad</button>
+<button class="btn" onclick="daily()">Daily</button>
+<button class="btn" onclick="spinAd()">Spin</button>
 </div>
-
 </div>
 
 <!-- SPIN -->
 <div id="spinPage" class="page">
+<div class="header">🎰 Spin</div>
 
-<div class="header">🎰 Spin Game</div>
-
-<div class="card" style="text-align:center;position:relative">
-
+<div class="card" style="position:relative">
 <div style="position:absolute;top:-15px;left:50%;transform:translateX(-50%)">🔻</div>
-
 <canvas id="wheel" width="260" height="260"></canvas>
-
 </div>
 
-<div class="card">
-<button class="btn" onclick="spinAd()">🎰 Spin Now</button>
-</div>
-
+<button class="btn" onclick="spinAd()">Spin Now</button>
 </div>
 
 <!-- NAV -->
 <div class="footer">
-<button class="nav active" onclick="nav('home',this)">Home</button>
-<button class="nav" onclick="nav('spinPage',this)">Spin</button>
+<button onclick="nav('home')">Home</button>
+<button onclick="nav('spinPage')">Spin</button>
 </div>
 
 <script>
 document.addEventListener("DOMContentLoaded", function(){
 
-// ===== CONFIG =====
-const AD_LINK="https://omg10.com/4/10880497";
+const AD="https://omg10.com/4/10880497";
 
-// ===== FIREBASE =====
+// Firebase
 firebase.initializeApp({
-apiKey:"AIzaSyD3mNkuJEZ8DpnCuz89wToiVrE9YvC-W7E",
+apiKey:"AIzaSy...",
 authDomain:"tap2earn-4ef6d.firebaseapp.com",
 databaseURL:"https://tap2earn-4ef6d-default-rtdb.firebaseio.com/",
 projectId:"tap2earn-4ef6d"
 });
 const db=firebase.database();
 
-// ===== USER =====
-let tg=window.Telegram?.WebApp;
-let userId="user_"+Math.floor(Math.random()*999999);
-
-if(tg && tg.initDataUnsafe?.user){
-userId=tg.initDataUnsafe.user.id;
-document.getElementById("user").innerText="👤 "+tg.initDataUnsafe.user.first_name;
-}
-
-// ===== DATA =====
+// Data
 let coins=0,level=1;
 
-// ===== UI =====
+// UI
 function update(){
 document.getElementById("coins").innerText=coins;
 document.getElementById("level").innerText=level;
 }
 
-// ===== LOAD =====
+// Load
 function load(){
-db.ref("users/"+userId).once("value",snap=>{
+db.ref("users/user").once("value",snap=>{
 let d=snap.val();
-if(d){
-coins=d.coins||0;
-level=d.level||1;
-}else{
-db.ref("users/"+userId).set({coins:100,level:1});
-}
+if(d){coins=d.coins||0;}
 update();
 });
 }
-
-// ===== SAVE =====
 function save(){
-db.ref("users/"+userId).update({coins,level});
+db.ref("users/user").update({coins});
 }
 
-// ===== TAP =====
+// Tap
 window.tap=function(){
 coins++;
 update();
 save();
 }
 
-// ===== DAILY =====
+// Daily
 window.daily=function(){
 coins+=500;
 update();
 save();
-alert("🎁 Daily reward");
+alert("Daily reward");
 }
 
-// ===== ADS =====
+// Ads
 window.watchAd=function(){
-localStorage.setItem("ad_start",Date.now());
-
 if(typeof show_10880483==="function"){
 show_10880483('pop').then(()=>reward()).catch(()=>openAd());
 }else openAd();
 }
 
 function openAd(){
-if(window.Telegram && Telegram.WebApp){
-Telegram.WebApp.openLink(AD_LINK);
-}else{
-window.open(AD_LINK,"_blank");
-}
+window.open(AD,"_blank");
 }
 
 function reward(){
-let r=Math.floor(Math.random()*200)+100;
-coins+=r;
+coins+=100;
 update();
 save();
-alert("💰 Earned "+r);
-
 if(localStorage.getItem("spin")){
 localStorage.removeItem("spin");
 spin();
 }
 }
 
-// VERIFY RETURN
-window.onfocus=function(){
-let s=localStorage.getItem("ad_start");
-if(!s)return;
-
-let t=Date.now()-s;
-localStorage.removeItem("ad_start");
-
-if(t>6000) reward();
-}
-
-// ===== NAV =====
-window.nav=function(id,btn){
+// Nav
+window.nav=function(id){
 document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
 document.getElementById(id).classList.add("active");
 }
 
-// ===== 🎰 SPIN =====
+// 🎰 SPIN
 const canvas=document.getElementById("wheel");
 const ctx=canvas.getContext("2d");
 
 const rewards=[50,100,200,300,500];
 const arc=(2*Math.PI)/rewards.length;
 
-let angle=0;
-let spinning=false;
+let angle=0,spinning=false;
 
 function draw(){
 ctx.clearRect(0,0,260,260);
@@ -295,21 +201,28 @@ ctx.restore();
 draw();
 
 window.spin=function(){
+
 if(spinning) return;
 spinning=true;
 
+// 🔊 sound
+document.getElementById("spinSound").play();
+
+// 📳 vibration
+if(navigator.vibrate) navigator.vibrate([200,100,200]);
+
 let i=Math.floor(Math.random()*rewards.length);
 let target=(Math.PI*2)-(i*arc)-arc/2;
-let final=angle+Math.PI*4+target;
+let final=angle+Math.PI*6+target;
 
 let start=null;
 
 function animate(t){
 if(!start) start=t;
-let p=(t-start)/2000;
+let p=(t-start)/3000;
 if(p>1)p=1;
 
-let current=angle+(final-angle)*(1-Math.pow(1-p,3));
+let current=angle+(final-angle)*(1-Math.pow(1-p,4));
 
 ctx.clearRect(0,0,260,260);
 ctx.save();
@@ -331,13 +244,37 @@ requestAnimationFrame(animate);
 
 function finish(i){
 spinning=false;
+
 let win=rewards[i];
 coins+=win;
 update();
 save();
-alert("🎰 Won "+win);
+
+// 🔊 win sound
+document.getElementById("winSound").play();
+
+// 🎉 confetti
+confetti();
+
+alert("🎉 You won "+win);
 }
 
+// 🎉 CONFETTI
+function confetti(){
+for(let i=0;i<30;i++){
+let el=document.createElement("div");
+el.innerHTML="🎉";
+el.style.position="fixed";
+el.style.left=Math.random()*100+"%";
+el.style.top="50%";
+el.style.fontSize="20px";
+document.body.appendChild(el);
+
+setTimeout(()=>el.remove(),1000);
+}
+}
+
+// Spin via ad
 window.spinAd=function(){
 localStorage.setItem("spin","yes");
 watchAd();
