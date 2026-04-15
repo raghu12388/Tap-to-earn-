@@ -17,24 +17,17 @@ color:white;
 
 /* LOADER */
 #loader{
-position:fixed;
-width:100%;
-height:100%;
-background:#000;
-display:flex;
-flex-direction:column;
-align-items:center;
-justify-content:center;
-z-index:9999;
+position:fixed;width:100%;height:100%;
+background:#000;display:flex;
+align-items:center;justify-content:center;
+z-index:9999;flex-direction:column;
 }
-.loader-circle{
-width:60px;height:60px;
-border:5px solid #333;
-border-top:5px solid #ff00cc;
-border-radius:50%;
+.loader{
+width:60px;height:60px;border:5px solid #333;
+border-top:5px solid #ff00cc;border-radius:50%;
 animation:spin 1s linear infinite;
 }
-@keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+@keyframes spin{100%{transform:rotate(360deg)}}
 
 /* UI */
 .header{padding:15px;font-size:20px;display:flex;justify-content:space-between}
@@ -47,7 +40,7 @@ background:radial-gradient(circle,#ff00cc,#6a00ff);
 border:none;font-size:40px;color:white;
 animation:pulse 1.5s infinite;
 }
-@keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.1)}100%{transform:scale(1)}}
+@keyframes pulse{50%{transform:scale(1.1)}}
 
 .btn{
 padding:12px;margin:5px;border:none;border-radius:10px;
@@ -70,12 +63,15 @@ background:#000;display:flex;justify-content:space-around;
 <!-- LOADER -->
 <div id="loader">
 <h2 style="color:#ff00cc;">Loading...</h2>
-<div class="loader-circle"></div>
+<div class="loader"></div>
 </div>
+
+<!-- SOUND -->
+<audio id="spinSound" src="https://www.soundjay.com/mechanical/sounds/slot-machine-1.mp3"></audio>
+<audio id="winSound" src="https://www.soundjay.com/misc/sounds/coin-drop-1.mp3"></audio>
 
 <!-- HOME -->
 <div id="home" class="page active">
-
 <div class="header">
 <span>🎮 Tap2Earn</span>
 <span id="user">👤</span>
@@ -96,7 +92,6 @@ background:#000;display:flex;justify-content:space-around;
 <button class="btn" onclick="spinAd()">Spin</button>
 <button class="btn" onclick="invite()">Invite</button>
 </div>
-
 </div>
 
 <!-- SPIN -->
@@ -117,7 +112,6 @@ background:#000;display:flex;justify-content:space-around;
 
 <div class="card"><h3>Coins</h3><h2 id="dashCoins">0</h2></div>
 <div class="card"><h3>Ads</h3><h2 id="dashAds">0</h2></div>
-<div class="card"><h3>Level</h3><h2 id="dashLevel">1</h2></div>
 
 <div class="card">
 <canvas id="chart" width="300" height="150"></canvas>
@@ -135,9 +129,9 @@ background:#000;display:flex;justify-content:space-around;
 document.addEventListener("DOMContentLoaded",function(){
 
 // LOADER
-setTimeout(()=>document.getElementById("loader").style.display="none",1500);
+setTimeout(()=>loader.style.display="none",1500);
 
-// MULTI ADS
+// ADS
 const ADS=[
 "https://omg10.com/4/10880497",
 "https://www.profitablecpmratenetwork.com/v461hnp1f?key=1b701233666cb461a77abce620d8c1ae"
@@ -160,7 +154,7 @@ let ref=new URLSearchParams(location.search).get("ref");
 
 if(tg && tg.initDataUnsafe?.user){
 userId=tg.initDataUnsafe.user.id;
-document.getElementById("user").innerText="👤 "+tg.initDataUnsafe.user.first_name;
+user.innerText="👤 "+tg.initDataUnsafe.user.first_name;
 }
 
 // DATA
@@ -176,30 +170,24 @@ if(ref && ref!==userId){
 bonus=500;
 db.ref("users/"+ref+"/coins").transaction(c=>(c||0)+500);
 }
-db.ref("users/"+userId).set({coins:100+bonus,level:1});
-}else{
-coins=d.coins||0;
-level=d.level||1;
-}
+db.ref("users/"+userId).set({coins:100+bonus});
+}else coins=d.coins||0;
 update();
 });
 }
 
 // SAVE
 function save(){
-db.ref("users/"+userId).update({coins,level});
+db.ref("users/"+userId).update({coins});
 }
 
-// UPDATE UI
+// UPDATE
 function update(){
-document.getElementById("coins").innerText=coins;
-document.getElementById("level").innerText=level;
-
-document.getElementById("dashCoins").innerText=coins;
-document.getElementById("dashLevel").innerText=level;
+coinsEl.innerText=coins;
+dashCoins.innerText=coins;
 
 let ads=localStorage.getItem("ads")||0;
-document.getElementById("dashAds").innerText=ads;
+dashAds.innerText=ads;
 }
 
 // TAP
@@ -216,27 +204,14 @@ update();
 save();
 }
 
-// COOLDOWN
-function canAd(){
-let last=localStorage.getItem("ad");
-return !last || Date.now()-last>30000;
-}
-
 // WATCH AD
 window.watchAd=function(){
-
-if(!canAd()){alert("Wait 30 sec");return;}
-
-localStorage.setItem("ad",Date.now());
 localStorage.setItem("ad_start",Date.now());
-
 let link=getAd();
 
 if(window.Telegram){
 Telegram.WebApp.openLink(link);
-}else{
-window.location.href=link;
-}
+}else window.location.href=link;
 }
 
 // VERIFY
@@ -248,11 +223,9 @@ let t=Date.now()-s;
 localStorage.removeItem("ad_start");
 
 if(t>8000){
-let r=[50,100,150,200][Math.floor(Math.random()*4)];
-coins+=r;
+coins+=100;
 
-let ads=parseInt(localStorage.getItem("ads")||0);
-ads++;
+let ads=parseInt(localStorage.getItem("ads")||0)+1;
 localStorage.setItem("ads",ads);
 
 update();
@@ -271,18 +244,25 @@ document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
 document.getElementById(id).classList.add("active");
 }
 
-// 🎰 SPIN
+// 🎰 3D SPIN
 const canvas=document.getElementById("wheel");
 const ctx=canvas.getContext("2d");
 
-const rewards=[50,100,200,300];
+const rewards=[50,100,200,300,500,1000];
 const arc=(2*Math.PI)/rewards.length;
+
+let angle=0,spinning=false;
 
 function draw(){
 ctx.clearRect(0,0,260,260);
+
 for(let i=0;i<rewards.length;i++){
+let grad=ctx.createLinearGradient(0,0,260,260);
+grad.addColorStop(0,i%2?"#ff00cc":"#6a00ff");
+grad.addColorStop(1,"#000");
+
 ctx.beginPath();
-ctx.fillStyle=i%2?"#ff00cc":"#330066";
+ctx.fillStyle=grad;
 ctx.moveTo(130,130);
 ctx.arc(130,130,130,i*arc,(i+1)*arc);
 ctx.fill();
@@ -291,18 +271,61 @@ ctx.save();
 ctx.translate(130,130);
 ctx.rotate(i*arc+arc/2);
 ctx.fillStyle="white";
-ctx.fillText(rewards[i],80,10);
+ctx.fillText(rewards[i],80,5);
 ctx.restore();
 }
 }
 draw();
 
 window.spin=function(){
-let win=rewards[Math.floor(Math.random()*rewards.length)];
+
+if(spinning)return;
+spinning=true;
+
+spinSound.play();
+if(navigator.vibrate)navigator.vibrate([200,100,200]);
+
+let i=Math.floor(Math.random()*rewards.length);
+let target=(Math.PI*2)-(i*arc)-arc/2;
+let final=angle+Math.PI*6+target;
+
+let start=null;
+
+function animate(t){
+if(!start)start=t;
+let p=(t-start)/3000;
+if(p>1)p=1;
+
+let current=angle+(final-angle)*(1-Math.pow(1-p,4));
+
+ctx.clearRect(0,0,260,260);
+ctx.save();
+ctx.translate(130,130);
+ctx.rotate(current);
+ctx.translate(-130,-130);
+draw();
+ctx.restore();
+
+if(p<1){
+requestAnimationFrame(animate);
+}else{
+angle=final%(Math.PI*2);
+finish(i);
+}
+}
+requestAnimationFrame(animate);
+}
+
+function finish(i){
+spinning=false;
+
+let win=rewards[i];
 coins+=win;
 update();
 save();
-alert("Won "+win);
+
+winSound.play();
+alert("🎉 You won "+win);
 }
 
 window.spinAd=function(){
@@ -310,17 +333,24 @@ localStorage.setItem("spin","yes");
 watchAd();
 }
 
+// INVITE
+window.invite=function(){
+let link=location.origin+"?ref="+userId;
+navigator.clipboard.writeText(link);
+alert("Invite link copied!");
+}
+
 // GRAPH
 function drawChart(){
-let ctx=document.getElementById("chart").getContext("2d");
-ctx.beginPath();
-ctx.moveTo(0,100);
-ctx.lineTo(50,80);
-ctx.lineTo(100,60);
-ctx.lineTo(150,40);
-ctx.lineTo(200,30);
-ctx.strokeStyle="#ff00cc";
-ctx.stroke();
+let c=document.getElementById("chart").getContext("2d");
+c.beginPath();
+c.moveTo(0,100);
+c.lineTo(50,80);
+c.lineTo(100,60);
+c.lineTo(150,40);
+c.lineTo(200,30);
+c.strokeStyle="#ff00cc";
+c.stroke();
 }
 drawChart();
 
