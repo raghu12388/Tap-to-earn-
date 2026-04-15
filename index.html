@@ -1,7 +1,7 @@
  <!DOCTYPE html>
 <html>
 <head>
-<title>Tap2Earn PRO FINAL</title>
+<title>Tap2Earn FINAL PRO</title>
 
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
@@ -48,10 +48,17 @@ body{margin:0;background:#000;color:#fff;font-family:sans-serif;text-align:cente
 <script>
 window.onload = function(){
 
-// ===== 🔥 YOUR AD LINK =====
-const AD_LINK = "https://www.profitablecpmratenetwork.com/v461hnp1f?key=1b701233666cb461a77abce620d8c1ae";
+// ===== 🔥 YOUR ADS (ROTATION FOR MORE MONEY) =====
+const ADS = [
+  "https://omg10.com/4/10880497",
+  "https://www.profitablecpmratenetwork.com/v461hnp1f?key=1b701233666cb461a77abce620d8c1ae"
+];
 
-// ===== 🔥 FIREBASE CONFIG =====
+function getAd(){
+  return ADS[Math.floor(Math.random()*ADS.length)];
+}
+
+// ===== FIREBASE =====
 const firebaseConfig = {
   apiKey: "AIzaSyD3mNkuJEZ8DpnCuz89wToiVrE9YvC-W7E",
   authDomain: "tap2earn-4ef6d.firebaseapp.com",
@@ -153,14 +160,16 @@ alert("🎁 Daily +500");
 });
 }
 
-// ===== 🔥 AD FIX (TELEGRAM SAFE) =====
+// ===== 🔥 AD (TELEGRAM SAFE) =====
 window.watchAd=function(){
 localStorage.setItem("ad_start",Date.now());
 
+let link = getAd();
+
 if(window.Telegram && Telegram.WebApp){
-Telegram.WebApp.openLink(AD_LINK);
+Telegram.WebApp.openLink(link);
 }else{
-window.open(AD_LINK,"_blank");
+window.open(link,"_blank");
 }
 }
 
