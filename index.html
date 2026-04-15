@@ -1,29 +1,79 @@
  <!DOCTYPE html>
 <html>
 <head>
-<title>Tap2Earn FINAL</title>
+<title>Tap2Earn PRO MAX</title>
+
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 
 <style>
 body{
-margin:0;font-family:sans-serif;
+margin:0;
+font-family:sans-serif;
 background:linear-gradient(180deg,#0f0c29,#302b63,#000);
-color:white;text-align:center;
+color:white;
+text-align:center;
 }
-.card{margin:15px;padding:20px;border-radius:15px;background:rgba(255,255,255,0.08)}
-.tap{width:140px;height:140px;border-radius:50%;background:#ff00cc;color:white;border:none;font-size:30px}
-.btn{padding:10px;margin:5px;border:none;border-radius:10px;background:#ff00cc;color:white}
-.footer{position:fixed;bottom:0;width:100%;background:#000;display:flex;justify-content:space-around}
+
+.card{
+margin:15px;
+padding:20px;
+border-radius:15px;
+background:rgba(255,255,255,0.08);
+}
+
+.tap{
+width:150px;height:150px;border-radius:50%;
+background:radial-gradient(circle,#ff00cc,#6a00ff);
+border:none;font-size:35px;color:white;
+}
+
+.btn{
+padding:12px;margin:6px;border:none;border-radius:12px;
+background:linear-gradient(45deg,#ff00cc,#ff6600);
+color:white;font-weight:bold;
+}
+
+/* PROGRESS */
+.progress{
+width:80%;height:10px;background:#333;margin:auto;border-radius:10px;
+}
+.bar{
+height:100%;width:0%;background:#ff00cc;
+}
+
+/* NAV */
+.footer{
+position:fixed;bottom:0;width:100%;
+background:#000;display:flex;justify-content:space-around;
+}
+
 .page{display:none}
 .active{display:block}
 
-/* progress */
-.progress{width:80%;height:10px;background:#333;margin:auto;border-radius:10px}
-.bar{height:100%;width:0%;background:#ff00cc}
+/* CONFETTI */
+.confetti{
+position:fixed;
+width:8px;height:8px;
+background:red;
+top:-10px;
+animation:fall 3s linear forwards;
+}
+@keyframes fall{
+to{
+transform:translateY(100vh) rotate(720deg);
+opacity:0;
+}
+}
 </style>
 </head>
 
 <body>
 
+<!-- AUDIO -->
+<audio id="spinSound" src="https://www.soundjay.com/mechanical/sounds/slot-machine-1.mp3"></audio>
+<audio id="winSound" src="https://www.soundjay.com/misc/sounds/coin-drop-1.mp3"></audio>
+
+<!-- HOME -->
 <div id="home" class="page active">
 
 <div class="card">
@@ -39,37 +89,45 @@ color:white;text-align:center;
 </div>
 
 <div class="card">
-<button class="btn" onclick="watchAd()">💰 Ad</button>
+<button class="btn" onclick="watchAd()">💰 Watch Ad</button>
 <button class="btn" onclick="spin()">🎰 Spin</button>
 <button class="btn" onclick="daily()">🎁 Daily</button>
-<button class="btn" onclick="invite()">📤 Invite</button>
-<button class="btn" onclick="claimMission()">🎯 Claim</button>
 </div>
 
 </div>
 
+<!-- SPIN -->
 <div id="spinPage" class="page">
-<div class="card">
+<div class="card" style="position:relative">
+
+<div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%)">🔻</div>
+
 <canvas id="wheel" width="260" height="260"></canvas>
+
+</div>
+
+<div class="card">
+<button class="btn" onclick="spin()">🎰 Spin Now</button>
+<button class="btn" onclick="watchAd()">💰 Watch Ad</button>
 </div>
 </div>
 
-<div id="dash" class="page">
-<div class="card"><h3>Coins</h3><h2 id="dCoins">0</h2></div>
-<div class="card"><h3>Ads</h3><h2 id="dAds">0</h2></div>
-<canvas id="chart" width="300" height="150"></canvas>
-</div>
-
+<!-- NAV -->
 <div class="footer">
 <button onclick="nav('home')">Home</button>
 <button onclick="nav('spinPage')">Spin</button>
-<button onclick="nav('dash')">📊</button>
 </div>
 
 <script>
 
 // DATA
 let coins=0,level=1,xp=0,need=100;
+
+// AUDIO UNLOCK 🔊
+document.body.addEventListener("click", ()=>{
+spinSound.play().then(()=>spinSound.pause());
+winSound.play().then(()=>winSound.pause());
+},{once:true});
 
 // UPDATE
 function update(){
@@ -78,9 +136,6 @@ levelEl.innerText=level;
 xpEl.innerText=xp;
 needEl.innerText=need;
 bar.style.width=(xp/need*100)+"%";
-
-dCoins.innerText=coins;
-dAds.innerText=localStorage.getItem("ads")||0;
 }
 
 // XP
@@ -88,7 +143,7 @@ function addXP(v){
 xp+=v;
 if(xp>=need){
 xp=0;level++;need+=50;
-alert("Level Up!");
+alert("🔥 Level Up!");
 }
 }
 
@@ -104,64 +159,29 @@ coins+=500;addXP(50);update();
 
 // ADS
 function watchAd(){
-localStorage.setItem("ad_start",Date.now());
 window.open("https://omg10.com/4/10880497");
-}
-
-// VERIFY
-window.onfocus=function(){
-let s=localStorage.getItem("ad_start");
-if(!s)return;
-if(Date.now()-s>5000){
-coins+=100;addXP(20);
-
-let a=parseInt(localStorage.getItem("ads")||0)+1;
-localStorage.setItem("ads",a);
-
-track("ad");
-
-update();
-}
-}
-
-// MISSIONS
-function track(t){
-let m=JSON.parse(localStorage.getItem("m")||'{"ad":0,"spin":0}');
-m[t]++;localStorage.setItem("m",JSON.stringify(m));
-}
-
-function claimMission(){
-let m=JSON.parse(localStorage.getItem("m")||'{"ad":0,"spin":0}');
-if(m.ad>=3||m.spin>=2){
-coins+=300;localStorage.removeItem("m");
-alert("Mission Done!");
-update();
-}else alert("Not complete");
-}
-
-// INVITE
-function invite(){
-let link=location.href+"?ref=123";
-navigator.clipboard.writeText(link);
-alert("Copied!");
 }
 
 // NAV
 function nav(id){
 document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
 document.getElementById(id).classList.add("active");
-if(id==="spinPage") draw();
+draw();
 }
 
-// SPIN
+// 🎰 SPIN ENGINE
 const canvas=document.getElementById("wheel");
 const ctx=canvas.getContext("2d");
-const r=[50,100,200,300];
-const arc=2*Math.PI/r.length;
+
+const rewards=[50,100,200,300];
+const arc=2*Math.PI/rewards.length;
+
+let angle=0,spinning=false;
 
 function draw(){
 ctx.clearRect(0,0,260,260);
-for(let i=0;i<r.length;i++){
+
+for(let i=0;i<rewards.length;i++){
 ctx.beginPath();
 ctx.fillStyle=i%2?"#ff00cc":"#6a00ff";
 ctx.moveTo(130,130);
@@ -172,28 +192,86 @@ ctx.save();
 ctx.translate(130,130);
 ctx.rotate(i*arc+arc/2);
 ctx.fillStyle="white";
-ctx.fillText(r[i],80,10);
+ctx.fillText(rewards[i],80,10);
 ctx.restore();
 }
 }
 
-function spin(){
-let win=r[Math.floor(Math.random()*r.length)];
-coins+=win;addXP(30);
-track("spin");
-update();
-alert("Won "+win);
+// ROTATE
+function drawRotate(a){
+ctx.save();
+ctx.clearRect(0,0,260,260);
+ctx.translate(130,130);
+ctx.rotate(a);
+ctx.translate(-130,-130);
+draw();
+ctx.restore();
 }
 
-// GRAPH
-function chart(){
-let c=document.getElementById("chart").getContext("2d");
-c.beginPath();
-c.moveTo(0,100);
-c.lineTo(50,80);
-c.lineTo(100,60);
-c.strokeStyle="#ff00cc";
-c.stroke();
+// SPIN
+function spin(){
+
+if(spinning) return;
+spinning=true;
+
+spinSound.currentTime=0;
+spinSound.play();
+
+let i=Math.floor(Math.random()*rewards.length);
+let target=(Math.PI*2)-(i*arc)-arc/2;
+let final=angle+Math.PI*6+target;
+
+let start=null;
+
+function animate(t){
+if(!start)start=t;
+
+let p=(t-start)/3000;
+if(p>1)p=1;
+
+let ease=1-Math.pow(1-p,3);
+let current=angle+(final-angle)*ease;
+
+drawRotate(current);
+
+if(p<1){
+requestAnimationFrame(animate);
+}else{
+angle=final%(Math.PI*2);
+finish(i);
+}
+}
+requestAnimationFrame(animate);
+}
+
+// 🎉 CONFETTI
+function confetti(){
+for(let i=0;i<40;i++){
+let c=document.createElement("div");
+c.className="confetti";
+c.style.left=Math.random()*100+"%";
+c.style.background=`hsl(${Math.random()*360},100%,50%)`;
+document.body.appendChild(c);
+
+setTimeout(()=>c.remove(),3000);
+}
+}
+
+// RESULT
+function finish(i){
+spinning=false;
+
+let win=rewards[i];
+coins+=win;
+addXP(30);
+update();
+
+winSound.currentTime=0;
+winSound.play();
+
+confetti();
+
+alert("🎉 You won "+win);
 }
 
 // INIT
@@ -202,10 +280,9 @@ let levelEl=document.getElementById("level");
 let xpEl=document.getElementById("xp");
 let needEl=document.getElementById("need");
 let bar=document.getElementById("bar");
-let dCoins=document.getElementById("dCoins");
-let dAds=document.getElementById("dAds");
 
-draw();chart();update();
+draw();
+update();
 
 </script>
 
