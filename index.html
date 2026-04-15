@@ -1,11 +1,11 @@
  <!DOCTYPE html>
 <html>
 <head>
-<title>Tap2Earn FINAL PRO</title>
+<title>Tap2Earn FIXED</title>
 
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-<!-- Firebase v8 -->
+<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
@@ -45,13 +45,11 @@ body{margin:0;background:#000;color:#fff;font-family:sans-serif;text-align:cente
 </div>
 
 <script>
-window.onload=function(){
 
-// ===== 🔥 AD LINK =====
-const AD_LINK = https://www.profitablecpmratenetwork.com/v461hnp1f?key=1b701233666cb461a77abce620d8c1ae
-";
+// ===== CONFIG =====
+const AD_LINK = "https://www.profitableratecpm.com/v461hnp1f?key=1b701233666cb461a77abce620d8c1ae";
 
-// ===== 🔥 FIREBASE CONFIG (YOUR REAL DATA) =====
+// ===== FIREBASE =====
 const firebaseConfig = {
   apiKey: "AIzaSyD3mNkuJEZ8DpnCuz89wToiVrE9YvC-W7E",
   authDomain: "tap2earn-4ef6d.firebaseapp.com",
@@ -112,7 +110,7 @@ document.getElementById("level").innerText=level;
 }
 
 // ===== NAV =====
-window.nav=function(id,btn){
+function nav(id,btn){
 document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
 document.getElementById(id).classList.add("active");
 
@@ -121,7 +119,7 @@ btn.classList.add("active");
 }
 
 // ===== TAP =====
-window.tap=function(){
+function tap(){
 coins += (1 + level);
 levelUp();
 update();
@@ -138,7 +136,7 @@ alert("🔥 Level "+level);
 }
 
 // ===== DAILY =====
-window.daily=function(){
+function daily(){
 let today=new Date().toDateString();
 
 db.ref("users/"+userId+"/lastDaily").once("value",snap=>{
@@ -155,10 +153,9 @@ alert("🎁 Daily +500");
 }
 
 // ===== AD =====
-window.watchAd=function(){
+function watchAd(){
 localStorage.setItem("ad_start",Date.now());
-window.open(AD_LINK,"_<script src="https://pl29113148.profitablecpmratenetwork.com/09/ee/23/09ee231a88790b6cababadb8008216ed.js"></script>
-");
+window.open(AD_LINK,"_blank");
 }
 
 // ===== VERIFY =====
@@ -181,16 +178,18 @@ localStorage.removeItem("spin");
 spin();
 }
 
-}else alert("Stay longer");
+}else{
+alert("Stay longer");
+}
 }
 
 // ===== SPIN =====
-window.spinAd=function(){
+function spinAd(){
 localStorage.setItem("spin","yes");
 watchAd();
 }
 
-window.spin=function(){
+function spin(){
 let rewards=[50,100,200,300,500];
 let win=rewards[Math.floor(Math.random()*rewards.length)];
 coins+=win;
@@ -200,7 +199,7 @@ alert("🎰 Won "+win);
 }
 
 // ===== REF =====
-window.share=function(){
+function share(){
 let link=location.origin+"?ref="+userId;
 alert("Invite:\n"+link);
 }
@@ -208,7 +207,6 @@ alert("Invite:\n"+link);
 // INIT
 load();
 
-};
 </script>
 
 </body>
