@@ -1,79 +1,32 @@
  <!DOCTYPE html>
 <html>
 <head>
-<title>Tap2Earn PRO MAX</title>
+<title>Tap2Earn SECURE</title>
 
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
 <style>
 body{
-margin:0;
-font-family:sans-serif;
+margin:0;font-family:sans-serif;
 background:linear-gradient(180deg,#0f0c29,#302b63,#000);
-color:white;
-text-align:center;
+color:white;text-align:center;
 }
 
-.card{
-margin:15px;
-padding:20px;
-border-radius:15px;
-background:rgba(255,255,255,0.08);
-}
+.card{margin:15px;padding:20px;border-radius:15px;background:rgba(255,255,255,0.08)}
+.tap{width:140px;height:140px;border-radius:50%;background:#ff00cc;color:white;border:none;font-size:30px}
+.btn{padding:12px;margin:6px;border:none;border-radius:12px;background:#ff00cc;color:white}
 
-.tap{
-width:150px;height:150px;border-radius:50%;
-background:radial-gradient(circle,#ff00cc,#6a00ff);
-border:none;font-size:35px;color:white;
-}
-
-.btn{
-padding:12px;margin:6px;border:none;border-radius:12px;
-background:linear-gradient(45deg,#ff00cc,#ff6600);
-color:white;font-weight:bold;
-}
-
-/* PROGRESS */
-.progress{
-width:80%;height:10px;background:#333;margin:auto;border-radius:10px;
-}
-.bar{
-height:100%;width:0%;background:#ff00cc;
-}
-
-/* NAV */
-.footer{
-position:fixed;bottom:0;width:100%;
-background:#000;display:flex;justify-content:space-around;
-}
-
+.footer{position:fixed;bottom:0;width:100%;background:#000;display:flex;justify-content:space-around}
 .page{display:none}
 .active{display:block}
 
-/* CONFETTI */
-.confetti{
-position:fixed;
-width:8px;height:8px;
-background:red;
-top:-10px;
-animation:fall 3s linear forwards;
-}
-@keyframes fall{
-to{
-transform:translateY(100vh) rotate(720deg);
-opacity:0;
-}
-}
+.progress{width:80%;height:10px;background:#333;margin:auto;border-radius:10px}
+.bar{height:100%;width:0%;background:#ff00cc}
 </style>
 </head>
 
 <body>
 
-<!-- AUDIO -->
-<audio id="spinSound" src="https://www.soundjay.com/mechanical/sounds/slot-machine-1.mp3"></audio>
-<audio id="winSound" src="https://www.soundjay.com/misc/sounds/coin-drop-1.mp3"></audio>
-
-<!-- HOME -->
 <div id="home" class="page active">
 
 <div class="card">
@@ -96,26 +49,8 @@ opacity:0;
 
 </div>
 
-<!-- SPIN -->
-<div id="spinPage" class="page">
-<div class="card" style="position:relative">
-
-<div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%)">🔻</div>
-
-<canvas id="wheel" width="260" height="260"></canvas>
-
-</div>
-
-<div class="card">
-<button class="btn" onclick="spin()">🎰 Spin Now</button>
-<button class="btn" onclick="watchAd()">💰 Watch Ad</button>
-</div>
-</div>
-
-<!-- NAV -->
 <div class="footer">
 <button onclick="nav('home')">Home</button>
-<button onclick="nav('spinPage')">Spin</button>
 </div>
 
 <script>
@@ -123,11 +58,15 @@ opacity:0;
 // DATA
 let coins=0,level=1,xp=0,need=100;
 
-// AUDIO UNLOCK 🔊
-document.body.addEventListener("click", ()=>{
-spinSound.play().then(()=>spinSound.pause());
-winSound.play().then(()=>winSound.pause());
-},{once:true});
+// ADS LIST (MULTI CPM)
+const ADS=[
+"https://omg10.com/4/10880497",
+"https://www.profitablecpmratenetwork.com/v461hnp1f?key=1b701233666cb461a77abce620d8c1ae"
+];
+
+function getAd(){
+return ADS[Math.floor(Math.random()*ADS.length)];
+}
 
 // UPDATE
 function update(){
@@ -142,136 +81,102 @@ bar.style.width=(xp/need*100)+"%";
 function addXP(v){
 xp+=v;
 if(xp>=need){
-xp=0;level++;need+=50;
+xp=0;
+level++;
+need+=50;
 alert("🔥 Level Up!");
 }
 }
 
 // TAP
 function tap(){
-coins++;addXP(5);update();
+coins++;
+addXP(5);
+update();
 }
 
-// DAILY
+// DAILY (ANTI CHEAT)
 function daily(){
-coins+=500;addXP(50);update();
+
+let last=localStorage.getItem("daily");
+let now=Date.now();
+
+if(last && now-last < 86400000){
+alert("Come tomorrow!");
+return;
 }
 
-// ADS
+localStorage.setItem("daily", now);
+
+coins+=500;
+addXP(50);
+update();
+}
+
+// 🚀 WATCH AD (SECURE)
 function watchAd(){
-window.open("https://omg10.com/4/10880497");
+
+// COOLDOWN
+let last=localStorage.getItem("ad_time");
+let now=Date.now();
+
+if(last && now-last < 30000){
+alert("Wait 30 seconds!");
+return;
+}
+
+localStorage.setItem("ad_time", now);
+
+// START TRACK
+localStorage.setItem("ad_start", now);
+
+// RANDOM AD
+let link=getAd();
+
+// OPEN SAFE
+if(window.Telegram && Telegram.WebApp){
+Telegram.WebApp.openLink(link);
+}else{
+window.open(link,"_blank");
+}
+}
+
+// 🔥 AUTO VERIFY SYSTEM
+window.onfocus=function(){
+
+let start=localStorage.getItem("ad_start");
+if(!start) return;
+
+let stayTime=Date.now()-start;
+
+// REMOVE TRACK
+localStorage.removeItem("ad_start");
+
+// ❌ ANTI CHEAT
+if(stayTime < 8000){
+alert("❌ Ad skipped!");
+return;
+}
+
+// ✅ VALID USER
+let reward=Math.floor(Math.random()*50)+50;
+
+coins+=reward;
+addXP(20);
+
+// SAVE ADS COUNT
+let ads=parseInt(localStorage.getItem("ads")||0)+1;
+localStorage.setItem("ads",ads);
+
+update();
+
+alert("💰 Earned "+reward);
 }
 
 // NAV
 function nav(id){
 document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
 document.getElementById(id).classList.add("active");
-draw();
-}
-
-// 🎰 SPIN ENGINE
-const canvas=document.getElementById("wheel");
-const ctx=canvas.getContext("2d");
-
-const rewards=[50,100,200,300];
-const arc=2*Math.PI/rewards.length;
-
-let angle=0,spinning=false;
-
-function draw(){
-ctx.clearRect(0,0,260,260);
-
-for(let i=0;i<rewards.length;i++){
-ctx.beginPath();
-ctx.fillStyle=i%2?"#ff00cc":"#6a00ff";
-ctx.moveTo(130,130);
-ctx.arc(130,130,130,i*arc,(i+1)*arc);
-ctx.fill();
-
-ctx.save();
-ctx.translate(130,130);
-ctx.rotate(i*arc+arc/2);
-ctx.fillStyle="white";
-ctx.fillText(rewards[i],80,10);
-ctx.restore();
-}
-}
-
-// ROTATE
-function drawRotate(a){
-ctx.save();
-ctx.clearRect(0,0,260,260);
-ctx.translate(130,130);
-ctx.rotate(a);
-ctx.translate(-130,-130);
-draw();
-ctx.restore();
-}
-
-// SPIN
-function spin(){
-
-if(spinning) return;
-spinning=true;
-
-spinSound.currentTime=0;
-spinSound.play();
-
-let i=Math.floor(Math.random()*rewards.length);
-let target=(Math.PI*2)-(i*arc)-arc/2;
-let final=angle+Math.PI*6+target;
-
-let start=null;
-
-function animate(t){
-if(!start)start=t;
-
-let p=(t-start)/3000;
-if(p>1)p=1;
-
-let ease=1-Math.pow(1-p,3);
-let current=angle+(final-angle)*ease;
-
-drawRotate(current);
-
-if(p<1){
-requestAnimationFrame(animate);
-}else{
-angle=final%(Math.PI*2);
-finish(i);
-}
-}
-requestAnimationFrame(animate);
-}
-
-// 🎉 CONFETTI
-function confetti(){
-for(let i=0;i<40;i++){
-let c=document.createElement("div");
-c.className="confetti";
-c.style.left=Math.random()*100+"%";
-c.style.background=`hsl(${Math.random()*360},100%,50%)`;
-document.body.appendChild(c);
-
-setTimeout(()=>c.remove(),3000);
-}
-}
-
-// RESULT
-function finish(i){
-spinning=false;
-
-let win=rewards[i];
-coins+=win;
-addXP(30);
-update();
-
-winSound.currentTime=0;
-winSound.play();
-
-confetti();
-
-alert("🎉 You won "+win);
 }
 
 // INIT
@@ -281,7 +186,6 @@ let xpEl=document.getElementById("xp");
 let needEl=document.getElementById("need");
 let bar=document.getElementById("bar");
 
-draw();
 update();
 
 </script>
