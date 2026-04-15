@@ -1,10 +1,9 @@
  <!DOCTYPE html>
 <html>
 <head>
-<title>Tap2Earn PRO MAX</title>
+<title>Tap2Earn Viral</title>
 
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script src="https://www.profitableratecpm.com/10880483.js"></script>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -17,35 +16,10 @@ background:linear-gradient(180deg,#1a0033,#000);
 color:white;
 text-align:center;
 }
-
-/* UI */
-.header{padding:15px;font-size:20px}
-.wallet{margin:15px;padding:20px;border-radius:20px;background:linear-gradient(135deg,#ff00cc,#6a00ff)}
-.card{margin:15px;padding:20px;border-radius:20px;background:rgba(255,255,255,0.08)}
-
-.tap{
-width:160px;height:160px;border-radius:50%;
-background:radial-gradient(circle,#ff00cc,#6a00ff);
-border:none;font-size:40px;color:white;
-animation:pulse 1.5s infinite;
-}
-
-@keyframes pulse{
-0%{transform:scale(1)}
-50%{transform:scale(1.1)}
-100%{transform:scale(1)}
-}
-
-.btn{
-padding:12px;margin:5px;border:none;border-radius:10px;
-background:linear-gradient(45deg,#ff00cc,#ff6600);color:white;
-}
-
-.footer{
-position:fixed;bottom:0;width:100%;
-background:#000;display:flex;justify-content:space-around;
-}
-
+.card{margin:15px;padding:20px;border-radius:15px;background:rgba(255,255,255,0.08)}
+.btn{padding:12px;margin:5px;border:none;border-radius:10px;background:#ff00cc;color:white}
+.tap{width:140px;height:140px;border-radius:50%;background:#ff00cc;color:white;border:none;font-size:30px}
+.footer{position:fixed;bottom:0;width:100%;background:#000;display:flex;justify-content:space-around}
 .page{display:none}
 .active{display:block}
 </style>
@@ -53,16 +27,10 @@ background:#000;display:flex;justify-content:space-around;
 
 <body>
 
-<!-- 🔊 SOUND -->
-<audio id="spinSound" src="https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3"></audio>
-<audio id="winSound" src="https://www.soundjay.com/misc/sounds/coin-drop-1.mp3"></audio>
-
-<!-- HOME -->
 <div id="home" class="page active">
-<div class="header">🎮 Tap2Earn</div>
 
-<div class="wallet">
-<h2>₹ <span id="coins">0</span></h2>
+<div class="card">
+<h2>💰 <span id="coins">0</span></h2>
 <p>Level: <span id="level">1</span></p>
 </div>
 
@@ -73,23 +41,19 @@ background:#000;display:flex;justify-content:space-around;
 <div class="card">
 <button class="btn" onclick="watchAd()">Watch Ad</button>
 <button class="btn" onclick="daily()">Daily</button>
+<button class="btn" onclick="invite()">Invite</button>
 <button class="btn" onclick="spinAd()">Spin</button>
 </div>
+
 </div>
 
-<!-- SPIN -->
 <div id="spinPage" class="page">
-<div class="header">🎰 Spin</div>
-
-<div class="card" style="position:relative">
-<div style="position:absolute;top:-15px;left:50%;transform:translateX(-50%)">🔻</div>
+<div class="card">
 <canvas id="wheel" width="260" height="260"></canvas>
 </div>
-
-<button class="btn" onclick="spinAd()">Spin Now</button>
+<button class="btn" onclick="spinAd()">Spin</button>
 </div>
 
-<!-- NAV -->
 <div class="footer">
 <button onclick="nav('home')">Home</button>
 <button onclick="nav('spinPage')">Spin</button>
@@ -98,9 +62,17 @@ background:#000;display:flex;justify-content:space-around;
 <script>
 document.addEventListener("DOMContentLoaded", function(){
 
-const AD="https://omg10.com/4/10880497";
+// 🔥 MULTI ADS
+const ADS=[
+"https://omg10.com/4/10880497",
+"https://www.profitablecpmratenetwork.com/v461hnp1f?key=1b701233666cb461a77abce620d8c1ae"
+];
 
-// Firebase
+function getAd(){
+return ADS[Math.floor(Math.random()*ADS.length)];
+}
+
+// FIREBASE
 firebase.initializeApp({
 apiKey:"AIzaSy...",
 authDomain:"tap2earn-4ef6d.firebaseapp.com",
@@ -109,8 +81,50 @@ projectId:"tap2earn-4ef6d"
 });
 const db=firebase.database();
 
-// Data
+// USER
+let tg=window.Telegram?.WebApp;
+let userId="user_"+Math.floor(Math.random()*999999);
+let ref=new URLSearchParams(location.search).get("ref");
+
+if(tg && tg.initDataUnsafe?.user){
+userId=tg.initDataUnsafe.user.id;
+}
+
+// DATA
 let coins=0,level=1;
+
+// LOAD
+function load(){
+db.ref("users/"+userId).once("value",snap=>{
+let d=snap.val();
+
+if(!d){
+
+let bonus=0;
+
+if(ref && ref!==userId){
+bonus=500;
+db.ref("users/"+ref+"/coins").transaction(c=>(c||0)+500);
+}
+
+db.ref("users/"+userId).set({
+coins:100+bonus,
+level:1
+});
+
+}else{
+coins=d.coins||0;
+level=d.level||1;
+}
+
+update();
+});
+}
+
+// SAVE
+function save(){
+db.ref("users/"+userId).update({coins,level});
+}
 
 // UI
 function update(){
@@ -118,74 +132,85 @@ document.getElementById("coins").innerText=coins;
 document.getElementById("level").innerText=level;
 }
 
-// Load
-function load(){
-db.ref("users/user").once("value",snap=>{
-let d=snap.val();
-if(d){coins=d.coins||0;}
-update();
-});
-}
-function save(){
-db.ref("users/user").update({coins});
-}
-
-// Tap
+// TAP
 window.tap=function(){
 coins++;
 update();
 save();
 }
 
-// Daily
+// DAILY
 window.daily=function(){
 coins+=500;
 update();
 save();
-alert("Daily reward");
 }
 
-// Ads
+// 🎯 COOLDOWN
+function canAd(){
+let last=localStorage.getItem("ad");
+if(!last)return true;
+return Date.now()-last>30000;
+}
+
+// ADS
 window.watchAd=function(){
-if(typeof show_10880483==="function"){
-show_10880483('pop').then(()=>reward()).catch(()=>openAd());
-}else openAd();
+
+if(!canAd()){
+alert("Wait 30 sec");
+return;
 }
 
-function openAd(){
-window.open(AD,"_blank");
+localStorage.setItem("ad",Date.now());
+localStorage.setItem("ad_start",Date.now());
+
+let link=getAd();
+
+if(window.Telegram){
+Telegram.WebApp.openLink(link);
+}else{
+window.location.href=link;
+}
 }
 
-function reward(){
-coins+=100;
+// VERIFY
+window.onfocus=function(){
+
+let s=localStorage.getItem("ad_start");
+if(!s)return;
+
+let t=Date.now()-s;
+localStorage.removeItem("ad_start");
+
+if(t>8000){
+
+let r=[50,100,150,200][Math.floor(Math.random()*4)];
+
+coins+=r;
 update();
 save();
+
+alert("Earned "+r);
+
 if(localStorage.getItem("spin")){
 localStorage.removeItem("spin");
 spin();
 }
-}
 
-// Nav
-window.nav=function(id){
-document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
-document.getElementById(id).classList.add("active");
+}
 }
 
 // 🎰 SPIN
 const canvas=document.getElementById("wheel");
 const ctx=canvas.getContext("2d");
 
-const rewards=[50,100,200,300,500];
+const rewards=[50,100,200,300];
 const arc=(2*Math.PI)/rewards.length;
 
-let angle=0,spinning=false;
-
 function draw(){
-ctx.clearRect(0,0,260,260);
 for(let i=0;i<rewards.length;i++){
 ctx.beginPath();
-ctx.fillStyle=i%2?"#ff00cc":"#6a00ff";
+ctx.fillStyle=i%2?"#ff00cc":"#330066";
 ctx.moveTo(130,130);
 ctx.arc(130,130,130,i*arc,(i+1)*arc);
 ctx.fill();
@@ -201,83 +226,31 @@ ctx.restore();
 draw();
 
 window.spin=function(){
-
-if(spinning) return;
-spinning=true;
-
-// 🔊 sound
-document.getElementById("spinSound").play();
-
-// 📳 vibration
-if(navigator.vibrate) navigator.vibrate([200,100,200]);
-
-let i=Math.floor(Math.random()*rewards.length);
-let target=(Math.PI*2)-(i*arc)-arc/2;
-let final=angle+Math.PI*6+target;
-
-let start=null;
-
-function animate(t){
-if(!start) start=t;
-let p=(t-start)/3000;
-if(p>1)p=1;
-
-let current=angle+(final-angle)*(1-Math.pow(1-p,4));
-
-ctx.clearRect(0,0,260,260);
-ctx.save();
-ctx.translate(130,130);
-ctx.rotate(current);
-ctx.translate(-130,-130);
-draw();
-ctx.restore();
-
-if(p<1){
-requestAnimationFrame(animate);
-}else{
-angle=final%(Math.PI*2);
-finish(i);
-}
-}
-requestAnimationFrame(animate);
-}
-
-function finish(i){
-spinning=false;
-
-let win=rewards[i];
+let win=rewards[Math.floor(Math.random()*rewards.length)];
 coins+=win;
 update();
 save();
-
-// 🔊 win sound
-document.getElementById("winSound").play();
-
-// 🎉 confetti
-confetti();
-
-alert("🎉 You won "+win);
+alert("Won "+win);
 }
 
-// 🎉 CONFETTI
-function confetti(){
-for(let i=0;i<30;i++){
-let el=document.createElement("div");
-el.innerHTML="🎉";
-el.style.position="fixed";
-el.style.left=Math.random()*100+"%";
-el.style.top="50%";
-el.style.fontSize="20px";
-document.body.appendChild(el);
-
-setTimeout(()=>el.remove(),1000);
-}
-}
-
-// Spin via ad
 window.spinAd=function(){
 localStorage.setItem("spin","yes");
 watchAd();
+}
+
+// 🚀 VIRAL INVITE
+window.invite=function(){
+let link=location.origin+"?ref="+userId;
+
+navigator.clipboard.writeText(link);
+
+alert("Invite link copied!\n"+link);
+}
+
+// NAV
+window.nav=function(id){
+document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+document.getElementById(id).classList.add("active");
 }
 
 // INIT
