@@ -1,9 +1,12 @@
  <!DOCTYPE html>
 <html>
 <head>
-<title>Tap2Earn FINAL PRO</title>
+<title>Tap2Earn PRO MAX</title>
 
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+<!-- 🔥 YOUR POPUP SCRIPT (IMPORTANT) -->
+<script src="https://www.profitableratecpm.com/10880483.js"></script>
 
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -15,7 +18,7 @@ body{margin:0;background:#000;color:#fff;font-family:sans-serif;text-align:cente
 .active{display:block}
 .tap{width:140px;height:140px;border-radius:50%;background:radial-gradient(circle,#ff00cc,#330066);border:none;font-size:30px;color:white}
 .btn{padding:10px;margin:5px;border:none;border-radius:10px;background:#ff00cc;color:white}
-.footer{position:fixed;bottom:0;width:100%;height:60px;background:#111;display:flex;justify-content:space-around;align-items:center}
+.footer{position:fixed;bottom:0;width:100%;height:60px;background:#111;display:flex;justify-content:space-around}
 .nav{background:none;border:none;color:#aaa}
 .nav.active{color:#ff00cc}
 </style>
@@ -48,15 +51,8 @@ body{margin:0;background:#000;color:#fff;font-family:sans-serif;text-align:cente
 <script>
 window.onload = function(){
 
-// ===== 🔥 YOUR ADS (ROTATION FOR MORE MONEY) =====
-const ADS = [
-  "https://omg10.com/4/10880497",
-  "https://www.profitablecpmratenetwork.com/v461hnp1f?key=1b701233666cb461a77abce620d8c1ae"
-];
-
-function getAd(){
-  return ADS[Math.floor(Math.random()*ADS.length)];
-}
+// ===== 🔥 DIRECT LINK (BACKUP AD) =====
+const DIRECT_AD = "https://omg10.com/4/10880497";
 
 // ===== FIREBASE =====
 const firebaseConfig = {
@@ -94,15 +90,8 @@ db.ref("users/"+userId).once("value",snap=>{
 let d=snap.val();
 
 if(!d){
-let bonus=0;
-
-if(ref && ref!==userId){
-bonus=500;
-db.ref("users/"+ref+"/coins").transaction(c=>(c||0)+500);
-}
-
 db.ref("users/"+userId).set({
-coins:100+bonus,
+coins:100,
 level:1,
 ads:0,
 lastDaily:""
@@ -112,137 +101,101 @@ coins=d.coins||0;
 level=d.level||1;
 ads=d.ads||0;
 }
-
 update();
 });
+}
+
+// ===== TAP =====
+window.tap=function(){
+coins += (1 + level);
+update();
+save();
+}
+
+// ===== DAILY =====
+window.daily=function(){
+coins += 500;
+update();
+save();
+alert("🎁 Daily reward");
+}
+
+// ===== 🔥 MAIN AD SYSTEM =====
+window.watchAd = function(){
+
+localStorage.setItem("ad_start", Date.now());
+
+alert("Watch ad and come back to earn");
+
+// TRY REWARDED POPUP FIRST
+if(typeof show_10880483 === "function"){
+
+show_10880483('pop')
+.then(() => {
+giveReward();
+})
+.catch(() => {
+openDirectAd();
+});
+
+}else{
+openDirectAd();
+}
+}
+
+// ===== FALLBACK DIRECT LINK =====
+function openDirectAd(){
+
+if(window.Telegram && Telegram.WebApp){
+Telegram.WebApp.openLink(DIRECT_AD);
+}else{
+window.open(DIRECT_AD, "_blank");
+}
+}
+
+// ===== REWARD FUNCTION =====
+function giveReward(){
+let reward = Math.floor(Math.random()*200)+100;
+coins += reward;
+ads++;
+update();
+save();
+alert("💰 Earned " + reward);
+}
+
+// ===== VERIFY RETURN =====
+window.onfocus = function(){
+
+let s = localStorage.getItem("ad_start");
+if(!s) return;
+
+let t = Date.now() - s;
+localStorage.removeItem("ad_start");
+
+if(t > 8000){
+giveReward();
+}
 }
 
 // ===== NAV =====
 window.nav=function(id,btn){
 document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
 document.getElementById(id).classList.add("active");
-
-document.querySelectorAll(".nav").forEach(b=>b.classList.remove("active"));
-btn.classList.add("active");
 }
 
-// ===== TAP =====
-window.tap=function(){
-coins += (1 + level);
-levelUp();
-update();
-save();
-}
-
-// ===== LEVEL =====
-function levelUp(){
-let newLevel=Math.floor(coins/1000)+1;
-if(newLevel>level){
-level=newLevel;
-alert("🔥 Level "+level);
-}
-}
-
-// ===== DAILY =====
-window.daily=function(){
-let today=new Date().toDateString();
-
-db.ref("users/"+userId+"/lastDaily").once("value",snap=>{
-if(snap.val()===today){
-alert("Already claimed");
-return;
-}
-
-coins+=500;
-save();
-db.ref("users/"+userId).update({lastDaily:today});
-alert("🎁 Daily +500");
-});
-}
-
-// ===== 🔥 AD (TELEGRAM SAFE) =====
-window.watchAd=function(){
-localStorage.setItem("ad_start",Date.now());
-
-let link = getAd();
-
-if(window.Telegram && Telegram.WebApp){
-Telegram.WebApp.openLink(link);
-}else{
-window.open(link,"_blank");
-}
-}
-
-// ===== VERIFY =====
-window.onfocus=function(){
-let s=localStorage.getItem("ad_start");
-if(!s) return;
-
-let t=Date.now()-s;
-localStorage.removeItem("ad_start");
-
-if(t>6000){
-coins+=150;
-ads++;
-update();
-save();
-alert("💰 Ad reward");
-
-if(localStorage.getItem("spin")){
-localStorage.removeItem("spin");
-spin();
-}
-
-}else{
-alert("Stay longer");
-}
-}
-
-// ===== 🎰 SPIN WHEEL =====
-const canvas = document.getElementById("wheel");
-
-if(canvas){
-const ctx = canvas.getContext("2d");
-const rewards=[50,100,200,300,500,1000];
-const arc=(2*Math.PI)/rewards.length;
-
-function draw(){
-ctx.clearRect(0,0,260,260);
-for(let i=0;i<rewards.length;i++){
-ctx.beginPath();
-ctx.fillStyle=i%2?"#ff00cc":"#330066";
-ctx.moveTo(130,130);
-ctx.arc(130,130,130,i*arc,(i+1)*arc);
-ctx.fill();
-
-ctx.save();
-ctx.translate(130,130);
-ctx.rotate(i*arc+arc/2);
-ctx.fillStyle="white";
-ctx.fillText(rewards[i],80,10);
-ctx.restore();
-}
-}
-draw();
-
+// ===== SPIN =====
 window.spinAd=function(){
 localStorage.setItem("spin","yes");
 watchAd();
 }
 
 window.spin=function(){
+let rewards=[50,100,200,500];
 let win=rewards[Math.floor(Math.random()*rewards.length)];
 coins+=win;
 update();
 save();
-alert("🎰 You won "+win);
-}
-}
-
-// ===== REF =====
-window.share=function(){
-let link=location.origin+"?ref="+userId;
-alert("Invite:\n"+link);
+alert("🎰 Won "+win);
 }
 
 // INIT
