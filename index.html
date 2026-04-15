@@ -1,11 +1,11 @@
  <!DOCTYPE html>
 <html>
 <head>
-<title>Tap2Earn PRO MAX</title>
+<title>Tap2Earn ULTRA PRO</title>
 
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-<!-- 🔥 YOUR POPUP SCRIPT (IMPORTANT) -->
+<!-- Ad popup -->
 <script src="https://www.profitableratecpm.com/10880483.js"></script>
 
 <!-- Firebase -->
@@ -13,12 +13,39 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
 <style>
-body{margin:0;background:#000;color:#fff;font-family:sans-serif;text-align:center;padding-bottom:80px}
+body{
+margin:0;
+font-family:sans-serif;
+background:linear-gradient(135deg,#0f0c29,#302b63,#24243e);
+color:white;
+text-align:center;
+padding-bottom:80px;
+}
 .page{display:none}
 .active{display:block}
-.tap{width:140px;height:140px;border-radius:50%;background:radial-gradient(circle,#ff00cc,#330066);border:none;font-size:30px;color:white}
-.btn{padding:10px;margin:5px;border:none;border-radius:10px;background:#ff00cc;color:white}
-.footer{position:fixed;bottom:0;width:100%;height:60px;background:#111;display:flex;justify-content:space-around}
+
+.header{padding:15px;font-size:20px;background:rgba(255,255,255,0.05)}
+.card{
+margin:15px;padding:20px;border-radius:15px;
+background:rgba(255,255,255,0.08);
+}
+
+.tap{
+width:140px;height:140px;border-radius:50%;
+background:radial-gradient(circle,#ff00cc,#330066);
+border:none;font-size:30px;color:white;
+}
+
+.btn{
+padding:12px;margin:5px;border:none;border-radius:10px;
+background:#ff00cc;color:white;
+}
+
+.footer{
+position:fixed;bottom:0;width:100%;
+background:#111;display:flex;justify-content:space-around;
+}
+
 .nav{background:none;border:none;color:#aaa}
 .nav.active{color:#ff00cc}
 </style>
@@ -26,180 +53,215 @@ body{margin:0;background:#000;color:#fff;font-family:sans-serif;text-align:cente
 
 <body>
 
+<!-- 🔊 SOUND -->
+<audio id="tapSound" src="https://www.soundjay.com/button/sounds/button-16.mp3"></audio>
+<audio id="coinSound" src="https://www.soundjay.com/misc/sounds/coin-drop-1.mp3"></audio>
+
+<!-- HOME -->
 <div id="home" class="page active">
-<h2>💰 <span id="coins">0</span></h2>
+<div class="header">💰 Tap2Earn PRO</div>
+
+<div class="card">
+<h2><span id="coins">0</span> 💰</h2>
 <p>Level: <span id="level">1</span></p>
-
-<button class="tap" onclick="tap()">🚀</button><br><br>
-
-<button class="btn" onclick="watchAd()">🎁 Watch Ad</button>
-<button class="btn" onclick="daily()">🎁 Daily</button>
-<button class="btn" onclick="share()">📤 Invite</button>
 </div>
 
+<div class="card">
+<button class="tap" onclick="tap()">🚀</button>
+</div>
+
+<div class="card">
+<button class="btn" onclick="watchAd()">Watch Ad</button>
+<button class="btn" onclick="daily()">Daily</button>
+<button class="btn" onclick="share()">Invite</button>
+</div>
+</div>
+
+<!-- SPIN -->
 <div id="spinPage" class="page">
-<h3>🎰 Spin Wheel</h3>
-<canvas id="wheel" width="260" height="260"></canvas><br><br>
-<button class="btn" onclick="spinAd()">Spin (Ad)</button>
+<div class="header">🎰 Spin</div>
+<div class="card">
+<canvas id="wheel" width="260" height="260"></canvas>
+</div>
+<button class="btn" onclick="spinAd()">Spin</button>
 </div>
 
+<!-- PROFILE -->
+<div id="profilePage" class="page">
+<div class="header">👤 Profile</div>
+<div class="card">
+<img id="avatar" width="80" style="border-radius:50%">
+<h3 id="name"></h3>
+<p id="userid"></p>
+<p>Coins: <span id="profileCoins"></span></p>
+</div>
+</div>
+
+<!-- LEADERBOARD -->
+<div id="leaderboardPage" class="page">
+<div class="header">🏆 Leaderboard</div>
+<div class="card" id="leaderboardList"></div>
+</div>
+
+<!-- NAV -->
 <div class="footer">
 <button class="nav active" onclick="nav('home',this)">Home</button>
 <button class="nav" onclick="nav('spinPage',this)">Spin</button>
+<button class="nav" onclick="nav('profilePage',this)">Profile</button>
+<button class="nav" onclick="nav('leaderboardPage',this)">🏆</button>
 </div>
 
 <script>
-window.onload = function(){
+window.onload=function(){
 
-// ===== 🔥 DIRECT LINK (BACKUP AD) =====
-const DIRECT_AD = "https://omg10.com/4/10880497";
+// 🔥 AD LINK
+const DIRECT_AD="https://omg10.com/4/10880497";
 
-// ===== FIREBASE =====
-const firebaseConfig = {
-  apiKey: "AIzaSyD3mNkuJEZ8DpnCuz89wToiVrE9YvC-W7E",
-  authDomain: "tap2earn-4ef6d.firebaseapp.com",
-  databaseURL: "https://tap2earn-4ef6d-default-rtdb.firebaseio.com/",
-  projectId: "tap2earn-4ef6d",
+// 🔥 FIREBASE
+const firebaseConfig={
+apiKey:"AIzaSyD3mNkuJEZ8DpnCuz89wToiVrE9YvC-W7E",
+authDomain:"tap2earn-4ef6d.firebaseapp.com",
+databaseURL:"https://tap2earn-4ef6d-default-rtdb.firebaseio.com/",
+projectId:"tap2earn-4ef6d"
 };
-
 firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
+const db=firebase.database();
 
-// ===== USER =====
-let tg = window.Telegram?.WebApp;
-let userId = tg?.initDataUnsafe?.user?.id || "user_"+Math.floor(Math.random()*999999);
-let ref = new URLSearchParams(location.search).get("ref");
+// 🔥 USER
+let tg=window.Telegram?.WebApp;
+let userId="user_"+Math.random();
+let userName="Guest";
+let avatar="https://i.pravatar.cc/100";
 
-// ===== DATA =====
-let coins=0, level=1, ads=0;
+if(tg && tg.initDataUnsafe?.user){
+let u=tg.initDataUnsafe.user;
+userId=u.id;
+userName=u.first_name;
+avatar=u.photo_url||avatar;
+}
 
-// ===== UI =====
+// DATA
+let coins=0,level=1;
+
+// UI
 function update(){
-document.getElementById("coins").innerText=coins;
-document.getElementById("level").innerText=level;
+coinsEl.innerText=coins;
+levelEl.innerText=level;
+profileCoins.innerText=coins;
 }
 
-// ===== SAVE =====
-function save(){
-db.ref("users/"+userId).update({coins,level,ads});
-}
-
-// ===== LOAD =====
-function load(){
-db.ref("users/"+userId).once("value",snap=>{
-let d=snap.val();
-
-if(!d){
-db.ref("users/"+userId).set({
-coins:100,
-level:1,
-ads:0,
-lastDaily:""
-});
-}else{
-coins=d.coins||0;
-level=d.level||1;
-ads=d.ads||0;
-}
-update();
-});
-}
-
-// ===== TAP =====
-window.tap=function(){
-coins += (1 + level);
-update();
-save();
-}
-
-// ===== DAILY =====
-window.daily=function(){
-coins += 500;
-update();
-save();
-alert("🎁 Daily reward");
-}
-
-// ===== 🔥 MAIN AD SYSTEM =====
-window.watchAd = function(){
-
-localStorage.setItem("ad_start", Date.now());
-
-alert("Watch ad and come back to earn");
-
-// TRY REWARDED POPUP FIRST
-if(typeof show_10880483 === "function"){
-
-show_10880483('pop')
-.then(() => {
-giveReward();
-})
-.catch(() => {
-openDirectAd();
-});
-
-}else{
-openDirectAd();
-}
-}
-
-// ===== FALLBACK DIRECT LINK =====
-function openDirectAd(){
-
-if(window.Telegram && Telegram.WebApp){
-Telegram.WebApp.openLink(DIRECT_AD);
-}else{
-window.open(DIRECT_AD, "_blank");
-}
-}
-
-// ===== REWARD FUNCTION =====
-function giveReward(){
-let reward = Math.floor(Math.random()*200)+100;
-coins += reward;
-ads++;
-update();
-save();
-alert("💰 Earned " + reward);
-}
-
-// ===== VERIFY RETURN =====
-window.onfocus = function(){
-
-let s = localStorage.getItem("ad_start");
-if(!s) return;
-
-let t = Date.now() - s;
-localStorage.removeItem("ad_start");
-
-if(t > 8000){
-giveReward();
-}
-}
-
-// ===== NAV =====
+// NAV
 window.nav=function(id,btn){
 document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
 document.getElementById(id).classList.add("active");
 }
 
-// ===== SPIN =====
-window.spinAd=function(){
-localStorage.setItem("spin","yes");
-watchAd();
+// LOAD
+function load(){
+db.ref("users/"+userId).once("value",snap=>{
+let d=snap.val();
+if(!d){
+db.ref("users/"+userId).set({
+coins:100,name:userName,avatar:avatar
+});
+}else{
+coins=d.coins||0;
+}
+update();
+updateProfile();
+});
 }
 
-window.spin=function(){
-let rewards=[50,100,200,500];
-let win=rewards[Math.floor(Math.random()*rewards.length)];
-coins+=win;
+// TAP
+window.tap=function(){
+tapSound.play();
+coins+=1;
 update();
 save();
-alert("🎰 Won "+win);
+}
+
+// DAILY
+window.daily=function(){
+coins+=500;
+coinSound.play();
+update();
+save();
+}
+
+// SAVE
+function save(){
+db.ref("users/"+userId).update({
+coins:coins,name:userName,avatar:avatar
+});
+}
+
+// ADS
+window.watchAd=function(){
+if(typeof show_10880483==="function"){
+show_10880483('pop').then(()=>{
+reward();
+}).catch(()=>openAd());
+}else openAd();
+}
+
+function openAd(){
+if(window.Telegram){
+Telegram.WebApp.openLink(DIRECT_AD);
+}else window.open(DIRECT_AD);
+}
+
+function reward(){
+let r=Math.floor(Math.random()*200)+100;
+coins+=r;
+coinSound.play();
+update();
+save();
+alert("Earned "+r);
+}
+
+// PROFILE
+function updateProfile(){
+name.innerText=userName;
+userid.innerText="ID: "+userId;
+avatar.src=avatar;
+}
+
+// RANK
+function getRank(c){
+if(c>10000)return"💎";
+if(c>5000)return"🥇";
+return"🥉";
+}
+
+// LEADERBOARD
+function loadLeaderboard(){
+db.ref("users").orderByChild("coins").limitToLast(10)
+.on("value",snap=>{
+let html="";
+let arr=[];
+snap.forEach(c=>arr.push(c.val()));
+arr.reverse();
+arr.forEach((u,i)=>{
+html+=`<div>${i+1}. ${u.name} - ${u.coins} ${getRank(u.coins)}</div>`;
+});
+leaderboardList.innerHTML=html;
+});
+}
+
+// SPIN SIMPLE
+window.spinAd=function(){
+watchAd();
+setTimeout(()=>{
+let win=[50,100,200][Math.floor(Math.random()*3)];
+coins+=win;
+update();
+alert("Won "+win);
+},2000);
 }
 
 // INIT
 load();
+loadLeaderboard();
 
 };
 </script>
