@@ -1,7 +1,7 @@
  <!DOCTYPE html>
 <html>
 <head>
-<title>Tap2Earn ULTRA PRO</title>
+<title>Tap2Earn PRO STABLE</title>
 
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://www.profitableratecpm.com/10880483.js"></script>
@@ -44,16 +44,12 @@ background:#111;display:flex;justify-content:space-around;
 
 <body>
 
-<!-- 🔊 SOUND -->
-<audio id="tapSound" src="https://www.soundjay.com/button/sounds/button-16.mp3"></audio>
-<audio id="coinSound" src="https://www.soundjay.com/misc/sounds/coin-drop-1.mp3"></audio>
-
 <!-- HOME -->
 <div id="home" class="page active">
 <div class="header">💰 Tap2Earn PRO</div>
 
 <div class="card">
-<h2><span id="coins">0</span> 💰</h2>
+<h2 id="coins">0 💰</h2>
 <p>Level: <span id="level">1</span></p>
 </div>
 
@@ -64,201 +60,147 @@ background:#111;display:flex;justify-content:space-around;
 <div class="card">
 <button class="btn" onclick="watchAd()">Watch Ad</button>
 <button class="btn" onclick="daily()">Daily</button>
-<button class="btn" onclick="share()">Invite</button>
 </div>
 </div>
 
 <!-- SPIN -->
 <div id="spinPage" class="page">
-<div class="header">🎰 Spin & Win</div>
+<div class="header">🎰 Spin</div>
 
 <div class="card" style="position:relative">
-<div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);font-size:30px;">🔻</div>
+<div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%)">🔻</div>
 <canvas id="wheel" width="260" height="260"></canvas>
 </div>
 
-<button class="btn" onclick="spinAd()">Spin (Ad)</button>
-</div>
-
-<!-- PROFILE -->
-<div id="profilePage" class="page">
-<div class="header">👤 Profile</div>
-<div class="card">
-<img id="avatar" width="80" style="border-radius:50%">
-<h3 id="name"></h3>
-<p id="userid"></p>
-<p>Coins: <span id="profileCoins"></span></p>
-</div>
-</div>
-
-<!-- LEADERBOARD -->
-<div id="leaderboardPage" class="page">
-<div class="header">🏆 Leaderboard</div>
-<div class="card" id="leaderboardList"></div>
+<button class="btn" onclick="spinAd()">Spin</button>
 </div>
 
 <!-- NAV -->
 <div class="footer">
 <button class="nav active" onclick="nav('home',this)">Home</button>
 <button class="nav" onclick="nav('spinPage',this)">Spin</button>
-<button class="nav" onclick="nav('profilePage',this)">Profile</button>
-<button class="nav" onclick="nav('leaderboardPage',this)">🏆</button>
 </div>
 
 <script>
-window.onload=function(){
+document.addEventListener("DOMContentLoaded", function(){
 
-const DIRECT_AD="https://omg10.com/4/10880497";
+// ===== CONFIG =====
+const AD_LINK = "https://omg10.com/4/10880497";
 
-// FIREBASE
-const firebaseConfig={
+// ===== FIREBASE =====
+firebase.initializeApp({
 apiKey:"AIzaSyD3mNkuJEZ8DpnCuz89wToiVrE9YvC-W7E",
 authDomain:"tap2earn-4ef6d.firebaseapp.com",
 databaseURL:"https://tap2earn-4ef6d-default-rtdb.firebaseio.com/",
 projectId:"tap2earn-4ef6d"
-};
-firebase.initializeApp(firebaseConfig);
-const db=firebase.database();
+});
+const db = firebase.database();
 
-// USER
-let tg=window.Telegram?.WebApp;
-let userId="user_"+Math.random();
-let userName="Guest";
-let avatar="https://i.pravatar.cc/100";
+// ===== USER =====
+let userId = "user_" + Math.floor(Math.random()*999999);
 
-if(tg && tg.initDataUnsafe?.user){
-let u=tg.initDataUnsafe.user;
-userId=u.id;
-userName=u.first_name;
-avatar=u.photo_url||avatar;
+// ===== DATA =====
+let coins = 0;
+let level = 1;
+
+// ===== UI =====
+function update(){
+document.getElementById("coins").innerText = coins + " 💰";
+document.getElementById("level").innerText = level;
 }
 
-// DATA
-let coins=0,level=1;
-
-// UI
-window.update=function(){
-coinsEl.innerText=coins;
-levelEl.innerText=level;
-profileCoins.innerText=coins;
+// ===== LOAD =====
+function load(){
+db.ref("users/"+userId).once("value",snap=>{
+let d=snap.val();
+if(d){
+coins=d.coins||0;
+level=d.level||1;
+}else{
+db.ref("users/"+userId).set({coins:100,level:1});
+}
+update();
+});
 }
 
-// NAV
-window.nav=function(id,btn){
+// ===== SAVE =====
+function save(){
+db.ref("users/"+userId).update({coins,level});
+}
+
+// ===== TAP =====
+window.tap = function(){
+coins++;
+update();
+save();
+}
+
+// ===== DAILY =====
+window.daily = function(){
+coins += 500;
+update();
+save();
+alert("Daily Reward");
+}
+
+// ===== ADS =====
+window.watchAd = function(){
+localStorage.setItem("ad_start", Date.now());
+
+if(typeof show_10880483 === "function"){
+show_10880483('pop')
+.then(()=>reward())
+.catch(()=>openAd());
+}else{
+openAd();
+}
+}
+
+function openAd(){
+if(window.Telegram && Telegram.WebApp){
+Telegram.WebApp.openLink(AD_LINK);
+}else{
+window.open(AD_LINK,"_blank");
+}
+}
+
+function reward(){
+let r = Math.floor(Math.random()*200)+100;
+coins += r;
+update();
+save();
+alert("Earned " + r);
+}
+
+// VERIFY RETURN
+window.onfocus = function(){
+let s = localStorage.getItem("ad_start");
+if(!s) return;
+
+let t = Date.now()-s;
+localStorage.removeItem("ad_start");
+
+if(t>6000) reward();
+}
+
+// ===== NAV =====
+window.nav = function(id,btn){
 document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
 document.getElementById(id).classList.add("active");
 }
 
-// LOAD
-function load(){
-db.ref("users/"+userId).once("value",snap=>{
-let d=snap.val();
-if(!d){
-db.ref("users/"+userId).set({coins:100,name:userName,avatar:avatar});
-}else{
-coins=d.coins||0;
-}
-update();
-updateProfile();
-});
-}
+// ===== 🎰 SPIN SYSTEM =====
+const canvas = document.getElementById("wheel");
+const ctx = canvas.getContext("2d");
 
-// TAP
-window.tap=function(){
-tapSound.play();
-coins+=1;
-update();
-save();
-}
+const rewards = [50,100,200,300,500];
+const arc = (2*Math.PI)/rewards.length;
 
-// DAILY
-window.daily=function(){
-coins+=500;
-coinSound.play();
-update();
-save();
-}
-
-// SAVE
-function save(){
-db.ref("users/"+userId).update({coins:coins,name:userName,avatar:avatar});
-}
-
-// ADS
-window.watchAd=function(){
-localStorage.setItem("ad_start",Date.now());
-
-if(typeof show_10880483==="function"){
-show_10880483('pop').then(()=>reward()).catch(()=>openAd());
-}else openAd();
-}
-
-function openAd(){
-if(window.Telegram){
-Telegram.WebApp.openLink(DIRECT_AD);
-}else window.open(DIRECT_AD);
-}
-
-// VERIFY RETURN
-window.onfocus=function(){
-let s=localStorage.getItem("ad_start");
-if(!s) return;
-
-let t=Date.now()-s;
-localStorage.removeItem("ad_start");
-
-if(t>7000) reward();
-}
-
-function reward(){
-let r=Math.floor(Math.random()*200)+100;
-coins+=r;
-coinSound.play();
-update();
-save();
-alert("💰 Earned "+r);
-
-if(localStorage.getItem("spin")){
-localStorage.removeItem("spin");
-spin();
-}
-}
-
-// PROFILE
-function updateProfile(){
-name.innerText=userName;
-userid.innerText="ID: "+userId;
-avatar.src=avatar;
-}
-
-// LEADERBOARD
-function loadLeaderboard(){
-db.ref("users").orderByChild("coins").limitToLast(10)
-.on("value",snap=>{
-let html="";
-let arr=[];
-snap.forEach(c=>arr.push(c.val()));
-arr.reverse();
-arr.forEach((u,i)=>{
-html+=`<div>${i+1}. ${u.name} - ${u.coins}</div>`;
-});
-leaderboardList.innerHTML=html;
-});
-}
-
-// ===== 🎰 REAL SPIN =====
-setTimeout(()=>{
-
-const canvas=document.getElementById("wheel");
-const ctx=canvas.getContext("2d");
-
-const rewards=[50,100,200,300,500,1000];
-const arc=(2*Math.PI)/rewards.length;
-
-let angle=0;
-let spinning=false;
+let angle = 0;
+let spinning = false;
 
 function draw(){
+ctx.clearRect(0,0,260,260);
 for(let i=0;i<rewards.length;i++){
 ctx.beginPath();
 ctx.fillStyle=i%2?"#ff00cc":"#330066";
@@ -276,44 +218,38 @@ ctx.restore();
 }
 draw();
 
-function drawRotate(a){
-ctx.clearRect(0,0,260,260);
-ctx.save();
-ctx.translate(130,130);
-ctx.rotate(a);
-ctx.translate(-130,-130);
-draw();
-ctx.restore();
-}
-
-window.spin=function(){
+window.spin = function(){
 if(spinning) return;
 spinning=true;
 
-let index=Math.floor(Math.random()*rewards.length);
-let target=(Math.PI*2)-(index*arc)-arc/2;
-let final=angle+Math.PI*6+target;
+let i=Math.floor(Math.random()*rewards.length);
+let target=(Math.PI*2)-(i*arc)-arc/2;
+let final=angle+Math.PI*4+target;
 
 let start=null;
 
 function animate(t){
 if(!start) start=t;
-let p=(t-start)/3000;
+let p=(t-start)/2000;
 if(p>1)p=1;
 
-let ease=1-Math.pow(1-p,3);
-let current=angle+(final-angle)*ease;
+let current=angle+(final-angle)*(1-Math.pow(1-p,3));
 
-drawRotate(current);
+ctx.clearRect(0,0,260,260);
+ctx.save();
+ctx.translate(130,130);
+ctx.rotate(current);
+ctx.translate(-130,-130);
+draw();
+ctx.restore();
 
 if(p<1){
 requestAnimationFrame(animate);
 }else{
 angle=final%(Math.PI*2);
-finish(index);
+finish(i);
 }
 }
-
 requestAnimationFrame(animate);
 }
 
@@ -323,21 +259,18 @@ let win=rewards[i];
 coins+=win;
 update();
 save();
-alert("🎰 Won "+win);
+alert("Won "+win);
 }
 
-window.spinAd=function(){
+window.spinAd = function(){
 localStorage.setItem("spin","yes");
 watchAd();
 }
 
-},500);
-
 // INIT
 load();
-loadLeaderboard();
 
-};
+});
 </script>
 
 </body>
