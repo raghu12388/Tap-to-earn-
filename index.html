@@ -1,7 +1,7 @@
  <!DOCTYPE html>
 <html>
 <head>
-<title>Tap2Earn FIXED</title>
+<title>Tap2Earn FINAL</title>
 
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
@@ -35,7 +35,8 @@ body{margin:0;background:#000;color:#fff;font-family:sans-serif;text-align:cente
 </div>
 
 <div id="spinPage" class="page">
-<h3>🎰 Spin</h3>
+<h3>🎰 Spin Wheel</h3>
+<canvas id="wheel" width="260" height="260"></canvas><br><br>
 <button class="btn" onclick="spinAd()">Spin (Ad)</button>
 </div>
 
@@ -46,10 +47,10 @@ body{margin:0;background:#000;color:#fff;font-family:sans-serif;text-align:cente
 
 <script>
 
-// ===== CONFIG =====
+// ===== 🔥 AD LINK =====
 const AD_LINK = "https://www.profitableratecpm.com/v461hnp1f?key=1b701233666cb461a77abce620d8c1ae";
 
-// ===== FIREBASE =====
+// ===== 🔥 FIREBASE =====
 const firebaseConfig = {
   apiKey: "AIzaSyD3mNkuJEZ8DpnCuz89wToiVrE9YvC-W7E",
   authDomain: "tap2earn-4ef6d.firebaseapp.com",
@@ -152,10 +153,15 @@ alert("🎁 Daily +500");
 });
 }
 
-// ===== AD =====
+// ===== AD (FIXED FOR TELEGRAM) =====
 function watchAd(){
 localStorage.setItem("ad_start",Date.now());
+
+if(window.Telegram && Telegram.WebApp){
+Telegram.WebApp.openLink(AD_LINK);
+}else{
 window.open(AD_LINK,"_blank");
+}
 }
 
 // ===== VERIFY =====
@@ -183,19 +189,45 @@ alert("Stay longer");
 }
 }
 
-// ===== SPIN =====
-function spinAd(){
+// ===== SPIN WHEEL =====
+const canvas=document.getElementById("wheel");
+
+if(canvas){
+const ctx=canvas.getContext("2d");
+const rewards=[50,100,200,300,500,1000];
+const arc=(2*Math.PI)/rewards.length;
+
+function draw(){
+for(let i=0;i<rewards.length;i++){
+ctx.beginPath();
+ctx.fillStyle=i%2?"#ff00cc":"#330066";
+ctx.moveTo(130,130);
+ctx.arc(130,130,130,i*arc,(i+1)*arc);
+ctx.fill();
+
+ctx.save();
+ctx.translate(130,130);
+ctx.rotate(i*arc+arc/2);
+ctx.fillStyle="white";
+ctx.fillText(rewards[i],80,10);
+ctx.restore();
+}
+}
+
+draw();
+
+window.spinAd=function(){
 localStorage.setItem("spin","yes");
 watchAd();
 }
 
-function spin(){
-let rewards=[50,100,200,300,500];
+window.spin=function(){
 let win=rewards[Math.floor(Math.random()*rewards.length)];
 coins+=win;
 update();
 save();
-alert("🎰 Won "+win);
+alert("🎰 You won "+win);
+}
 }
 
 // ===== REF =====
